@@ -23,11 +23,21 @@ let realTimeEnabled = true;
 let currentIssues = [];
 let typingTimer = null;
 let highlightedRanges = [];
+let isInitialized = false;
+
+// Prevent page refresh crashes
+window.addEventListener('beforeunload', function(e) {
+  e.preventDefault();
+  e.returnValue = '';
+  return 'Refreshing will close the add-in. Are you sure?';
+});
 
 // Initialize when Office is ready
-Office.onReady((info) => {
-  if (info.host === Office.HostType.Word) {
-    console.log("Ilana Protocol Intelligence initialized");
+function initializeApp() {
+  if (isInitialized) return;
+  
+  try {
+    console.log("Ilana Protocol Intelligence initializing...");
     
     // Set up event listeners
     setupEventListeners();
@@ -39,8 +49,38 @@ Office.onReady((info) => {
     
     // Initial scan
     scanDocument();
+    
+    isInitialized = true;
+    console.log("Ilana Protocol Intelligence initialized successfully");
+  } catch (error) {
+    console.error("Initialization error:", error);
+    showError("Failed to initialize. Please reload the add-in.");
   }
-});
+}
+
+// Office initialization with error handling
+if (typeof Office !== 'undefined') {
+  Office.onReady((info) => {
+    if (info.host === Office.HostType.Word) {
+      initializeApp();
+    }
+  });
+} else {
+  // Fallback if Office.js isn't loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (typeof Office !== 'undefined') {
+        Office.onReady((info) => {
+          if (info.host === Office.HostType.Word) {
+            initializeApp();
+          }
+        });
+      } else {
+        showError("Office.js not loaded. Please refresh the add-in.");
+      }
+    }, 1000);
+  });
+}
 
 function setupEventListeners() {
   // Scan button

@@ -23,11 +23,21 @@ let realTimeEnabled = true;
 let currentIssues = [];
 let typingTimer = null;
 let highlightedRanges = [];
+let isInitialized = false;
+
+// Prevent page refresh crashes
+window.addEventListener('beforeunload', function(e) {
+  e.preventDefault();
+  e.returnValue = '';
+  return 'Refreshing will close the add-in. Are you sure?';
+});
 
 // Initialize when Office is ready
-Office.onReady((info) => {
-  if (info.host === Office.HostType.Word) {
-    console.log("Ilana Protocol Intelligence initialized");
+function initializeApp() {
+  if (isInitialized) return;
+  
+  try {
+    console.log("Ilana Protocol Intelligence initializing...");
     
     // Set up event listeners
     setupEventListeners();
@@ -39,24 +49,64 @@ Office.onReady((info) => {
     
     // Initial scan
     scanDocument();
+    
+    isInitialized = true;
+    console.log("Ilana Protocol Intelligence initialized successfully");
+  } catch (error) {
+    console.error("Initialization error:", error);
+    showError("Failed to initialize. Please reload the add-in.");
   }
-});
+}
+
+// Office initialization with error handling
+if (typeof Office !== 'undefined') {
+  Office.onReady((info) => {
+    if (info.host === Office.HostType.Word) {
+      initializeApp();
+    }
+  });
+} else {
+  // Fallback if Office.js isn't loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (typeof Office !== 'undefined') {
+        Office.onReady((info) => {
+          if (info.host === Office.HostType.Word) {
+            initializeApp();
+          }
+        });
+      } else {
+        showError("Office.js not loaded. Please refresh the add-in.");
+      }
+    }, 1000);
+  });
+}
 
 function setupEventListeners() {
-  // Scan button
-  document.getElementById("scan-button").onclick = scanDocument;
-  
-  // Filter buttons
-  document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.onclick = () => filterIssues(btn.dataset.filter);
-  });
-  
-  // Quick actions
-  document.getElementById("accept-all-btn").onclick = acceptAllSuggestions;
-  document.getElementById("ignore-all-btn").onclick = ignoreAllSuggestions;
-  
-  // Status indicator toggle
-  document.getElementById("status-indicator").onclick = toggleRealTime;
+  try {
+    // Scan button
+    const scanBtn = document.getElementById("scan-button");
+    if (scanBtn) scanBtn.onclick = scanDocument;
+    
+    // Filter buttons
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.onclick = () => filterIssues(btn.dataset.filter);
+    });
+    
+    // Quick actions
+    const acceptBtn = document.getElementById("accept-all-btn");
+    const ignoreBtn = document.getElementById("ignore-all-btn");
+    if (acceptBtn) acceptBtn.onclick = acceptAllSuggestions;
+    if (ignoreBtn) ignoreBtn.onclick = ignoreAllSuggestions;
+    
+    // Status indicator toggle
+    const statusIndicator = document.getElementById("status-indicator");
+    if (statusIndicator) statusIndicator.onclick = toggleRealTime;
+    
+    console.log("Event listeners set up successfully");
+  } catch (error) {
+    console.error("Error setting up event listeners:", error);
+  }
 }
 
 async function scanDocument() {
@@ -86,16 +136,24 @@ async function scanDocument() {
 }
 
 async function getDocumentContent() {
+  if (typeof Word === 'undefined') {
+    throw new Error('Word API not available');
+  }
+  
   return new Promise((resolve, reject) => {
     Word.run(async (context) => {
       try {
         const body = context.document.body;
         context.load(body, "text");
         await context.sync();
-        resolve(body.text);
+        resolve(body.text || '');
       } catch (error) {
+        console.error("Error getting document content:", error);
         reject(error);
       }
+    }).catch(error => {
+      console.error("Word.run failed:", error);
+      reject(error);
     });
   });
 }
