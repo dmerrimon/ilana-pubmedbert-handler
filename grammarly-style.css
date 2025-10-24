@@ -1,0 +1,513 @@
+/* Protocol Intelligence - Grammarly-inspired Styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;600;700&display=swap');
+
+:root {
+  /* Grammarly-inspired color palette */
+  --grammarly-green: #15c39a;
+  --grammarly-green-hover: #0f9976;
+  --grammarly-green-light: #e8f8f4;
+  --grammarly-red: #f5574e;
+  --grammarly-red-light: #ffeeed;
+  --grammarly-yellow: #ffd93d;
+  --grammarly-yellow-light: #fffbea;
+  --grammarly-blue: #4285f4;
+  --grammarly-blue-light: #e8f0fe;
+  --grammarly-purple: #6c5ce7;
+  --grammarly-purple-light: #f0edff;
+  
+  /* Grammarly grays */
+  --grammarly-gray-900: #1e2022;
+  --grammarly-gray-800: #393b3d;
+  --grammarly-gray-700: #515356;
+  --grammarly-gray-600: #898d91;
+  --grammarly-gray-500: #a6aaae;
+  --grammarly-gray-400: #c5c9cc;
+  --grammarly-gray-300: #d9dcdf;
+  --grammarly-gray-200: #e9ebec;
+  --grammarly-gray-100: #f2f3f4;
+  --grammarly-gray-50: #f9fafb;
+  
+  /* Protocol Intelligence brand colors */
+  --pi-brand-primary: #151515;
+  --pi-brand-secondary: #ffffff;
+  --pi-brand-accent: #333333;
+  
+  /* Protocol Intelligence specific colors */
+  --pi-critical: var(--grammarly-red);
+  --pi-critical-bg: var(--grammarly-red-light);
+  --pi-high: #ff7b54;
+  --pi-high-bg: #fff4f2;
+  --pi-medium: var(--grammarly-yellow);
+  --pi-medium-bg: var(--grammarly-yellow-light);
+  --pi-low: var(--grammarly-blue);
+  --pi-low-bg: var(--grammarly-blue-light);
+  --pi-success: var(--grammarly-green);
+  --pi-success-bg: var(--grammarly-green-light);
+  
+  /* Spacing and sizing */
+  --grammarly-radius: 8px;
+  --grammarly-radius-sm: 4px;
+  --grammarly-radius-lg: 12px;
+  --grammarly-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --grammarly-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --grammarly-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--grammarly-gray-800);
+  background-color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Grammarly-style container */
+#container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+/* Header - Protocol Intelligence brand */
+.ms-welcome__header {
+  background: var(--pi-brand-primary);
+  color: var(--pi-brand-secondary);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--grammarly-shadow);
+}
+
+.ms-welcome__header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 8px 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.ms-welcome__header p {
+  font-size: 13px;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+/* Main content area */
+.ms-welcome__main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--grammarly-gray-50);
+}
+
+/* Welcome section */
+#welcome-section {
+  text-align: center;
+  background: white;
+  border-radius: var(--grammarly-radius-lg);
+  padding: 24px;
+  box-shadow: var(--grammarly-shadow);
+  margin-bottom: 16px;
+}
+
+#welcome-section h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--grammarly-gray-900);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+#welcome-section p {
+  color: var(--grammarly-gray-600);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Feature list - Grammarly card style */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--grammarly-gray-50);
+  border: 1px solid var(--grammarly-gray-200);
+  border-radius: var(--grammarly-radius);
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.feature-item:hover {
+  background: white;
+  border-color: var(--grammarly-green);
+  box-shadow: var(--grammarly-shadow);
+  transform: translateY(-1px);
+}
+
+.feature-icon {
+  font-size: 18px;
+}
+
+/* Grammarly-style buttons */
+.ms-Button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: var(--grammarly-radius);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  min-height: 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ms-Button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.ms-Button--primary {
+  background: var(--pi-brand-primary);
+  color: var(--pi-brand-secondary);
+  box-shadow: 0 2px 4px rgba(21, 21, 21, 0.2);
+}
+
+.ms-Button--primary:hover:not(:disabled) {
+  background: var(--pi-brand-accent);
+  box-shadow: 0 4px 8px rgba(21, 21, 21, 0.3);
+  transform: translateY(-1px);
+}
+
+.ms-Button--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(21, 195, 154, 0.2);
+}
+
+.ms-Button--default {
+  background: white;
+  color: var(--grammarly-gray-700);
+  border: 1px solid var(--grammarly-gray-300);
+  box-shadow: var(--grammarly-shadow);
+}
+
+.ms-Button--default:hover:not(:disabled) {
+  background: var(--grammarly-gray-50);
+  border-color: var(--grammarly-gray-400);
+  box-shadow: var(--grammarly-shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* Analysis loading - Grammarly style */
+#analysis-loading {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: var(--grammarly-radius-lg);
+  box-shadow: var(--grammarly-shadow);
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--grammarly-gray-200);
+  border-top: 3px solid var(--grammarly-green);
+  border-radius: 50%;
+  animation: grammarly-spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes grammarly-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Analysis results styling */
+.analysis-results {
+  background: white;
+  border-radius: var(--grammarly-radius-lg);
+  padding: 24px;
+  box-shadow: var(--grammarly-shadow);
+}
+
+.result-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--grammarly-gray-200);
+}
+
+.result-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.result-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--grammarly-gray-900);
+  margin-bottom: 12px;
+}
+
+.score-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: var(--grammarly-radius);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.score-indicator.excellent {
+  background: var(--grammarly-green-light);
+  color: var(--grammarly-green);
+  border: 1px solid var(--grammarly-green);
+}
+
+.score-indicator.good {
+  background: var(--grammarly-blue-light);
+  color: var(--grammarly-blue);
+  border: 1px solid var(--grammarly-blue);
+}
+
+.score-indicator.fair {
+  background: var(--grammarly-yellow-light);
+  color: var(--grammarly-gray-800);
+  border: 1px solid var(--grammarly-yellow);
+}
+
+.score-indicator.poor {
+  background: var(--grammarly-red-light);
+  color: var(--grammarly-red);
+  border: 1px solid var(--grammarly-red);
+}
+
+.risk-indicator {
+  padding: 12px 16px;
+  border-radius: var(--grammarly-radius);
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.risk-indicator.low-risk {
+  background: var(--grammarly-green-light);
+  color: var(--grammarly-green);
+  border: 1px solid var(--grammarly-green);
+}
+
+.risk-indicator.medium-risk {
+  background: var(--grammarly-yellow-light);
+  color: var(--grammarly-gray-800);
+  border: 1px solid var(--grammarly-yellow);
+}
+
+.risk-indicator.high-risk {
+  background: var(--grammarly-red-light);
+  color: var(--grammarly-red);
+  border: 1px solid var(--grammarly-red);
+}
+
+.risk-indicator.unknown-risk {
+  background: var(--grammarly-gray-100);
+  color: var(--grammarly-gray-600);
+  border: 1px solid var(--grammarly-gray-300);
+}
+
+.missing-sections, .red-flags, .recommendations {
+  margin-top: 12px;
+}
+
+.missing-sections h4, .red-flags h4, .recommendations h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--grammarly-gray-800);
+  margin-bottom: 8px;
+}
+
+.missing-sections ul, .red-flags ul, .recommendations ul {
+  list-style: none;
+  padding: 0;
+}
+
+.missing-sections li, .recommendations li {
+  padding: 8px 12px;
+  background: var(--grammarly-gray-50);
+  border-left: 3px solid var(--grammarly-blue);
+  margin-bottom: 6px;
+  border-radius: 0 var(--grammarly-radius) var(--grammarly-radius) 0;
+  font-size: 13px;
+  color: var(--grammarly-gray-700);
+}
+
+.red-flag {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: var(--grammarly-radius);
+  font-size: 13px;
+}
+
+.red-flag.high {
+  background: var(--grammarly-red-light);
+  border-left: 3px solid var(--grammarly-red);
+}
+
+.red-flag.medium {
+  background: var(--grammarly-yellow-light);
+  border-left: 3px solid var(--grammarly-yellow);
+}
+
+.red-flag.low {
+  background: var(--grammarly-blue-light);
+  border-left: 3px solid var(--grammarly-blue);
+}
+
+.clarity-score {
+  margin-bottom: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--grammarly-gray-200);
+  flex-wrap: wrap;
+}
+
+.error-message {
+  background: white;
+  border-radius: var(--grammarly-radius-lg);
+  padding: 24px;
+  box-shadow: var(--grammarly-shadow);
+  text-align: center;
+}
+
+.error-message h3 {
+  color: var(--grammarly-red);
+  margin-bottom: 12px;
+}
+
+.error-message p {
+  color: var(--grammarly-gray-600);
+  margin-bottom: 16px;
+}
+
+/* Inline notifications */
+.inline-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  max-width: 300px;
+  border-radius: var(--grammarly-radius);
+  box-shadow: var(--grammarly-shadow-lg);
+  z-index: 1000;
+  animation: grammarly-slideIn 0.3s ease;
+}
+
+.inline-notification.info {
+  background: var(--grammarly-blue-light);
+  border: 1px solid var(--grammarly-blue);
+  color: var(--grammarly-blue);
+}
+
+.inline-notification.success {
+  background: var(--grammarly-green-light);
+  border: 1px solid var(--grammarly-green);
+  color: var(--grammarly-green);
+}
+
+.inline-notification.warning {
+  background: var(--grammarly-yellow-light);
+  border: 1px solid var(--grammarly-yellow);
+  color: var(--grammarly-gray-800);
+}
+
+.inline-notification.error {
+  background: var(--grammarly-red-light);
+  border: 1px solid var(--grammarly-red);
+  color: var(--grammarly-red);
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.notification-message {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+@keyframes grammarly-slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .ms-welcome__main {
+    padding: 12px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .inline-notification {
+    right: 12px;
+    bottom: 12px;
+    max-width: calc(100% - 24px);
+  }
+}
+
+/* Focus styles for accessibility */
+.ms-Button:focus {
+  outline: 2px solid var(--grammarly-blue);
+  outline-offset: 2px;
+}

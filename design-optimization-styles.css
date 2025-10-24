@@ -1,0 +1,96 @@
+/* Design Optimization Styles */
+
+.design-optimization-popup {
+  border-left: 4px solid #6c5ce7;
+  background: linear-gradient(90deg, #f0edff 0%, white 8px);
+}
+
+.design-header {
+  background: linear-gradient(90deg, #f0edff 0%, white 20%);
+  border-left: 4px solid #6c5ce7;
+}
+
+.optimization-category {
+  padding: 12px;
+  background: #f0edff;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #6c5ce7;
+}
+
+.evidence-level {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+}
+
+.evidence-level.high {
+  background: #15c39a;
+  color: white;
+}
+
+.evidence-level.medium {
+  background: #ffd93d;
+  color: #393b3d;
+}
+
+.evidence-level.low {
+  background: #898d91;
+  color: white;
+}
+
+.optimization-recommendations {
+  margin-top: 12px;
+}
+
+.recommendation-item {
+  padding: 8px 12px;
+  margin: 6px 0;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #f0edff;
+  border-left: 3px solid #6c5ce7;
+  color: #333;
+}
+
+.design-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.design-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  flex: 1;
+}
+
+.design-btn.primary {
+  background: #6c5ce7;
+  color: white;
+}
+
+.design-btn.primary:hover {
+  background: #5b4cdb;
+  transform: translateY(-1px);
+}
+
+.design-btn.secondary {
+  background: white;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.design-btn.secondary:hover {
+  background: #f5f5f5;
+}

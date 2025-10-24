@@ -1,0 +1,97 @@
+/* Feasibility Analysis Styles */
+
+.feasibility-popup {
+  border-left: 4px solid #ff7b54;
+  background: linear-gradient(90deg, #fff4f2 0%, white 8px);
+}
+
+.feasibility-header {
+  background: linear-gradient(90deg, #fff4f2 0%, white 20%);
+  border-left: 4px solid #ff7b54;
+}
+
+.risk-summary {
+  padding: 16px;
+  background: #fff4f2;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ff7b54;
+}
+
+.risk-level {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.risk-level.high {
+  color: #f5574e;
+}
+
+.risk-level.medium {
+  color: #ffd93d;
+}
+
+.risk-level.low {
+  color: #15c39a;
+}
+
+.red-flags-list {
+  margin-top: 12px;
+}
+
+.red-flag-item {
+  padding: 8px 12px;
+  margin: 6px 0;
+  border-radius: 6px;
+  font-size: 13px;
+  border-left: 3px solid;
+}
+
+.red-flag-item.high {
+  background: #ffeeed;
+  border-color: #f5574e;
+  color: #d32f2f;
+}
+
+.red-flag-item.medium {
+  background: #fffbea;
+  border-color: #ffd93d;
+  color: #f57c00;
+}
+
+.feasibility-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.feasibility-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  flex: 1;
+}
+
+.feasibility-btn.primary {
+  background: #ff7b54;
+  color: white;
+}
+
+.feasibility-btn.primary:hover {
+  background: #ff5722;
+  transform: translateY(-1px);
+}
+
+.feasibility-btn.secondary {
+  background: white;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.feasibility-btn.secondary:hover {
+  background: #f5f5f5;
+}
