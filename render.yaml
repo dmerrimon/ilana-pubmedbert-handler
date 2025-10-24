@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ilana-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PINECONE_INDEX_NAME
+        value: llama-text-embed-v2-index
+      - key: PINECONE_ENVIRONMENT
+        value: gcp-starter
+      - key: AZURE_OPENAI_ENDPOINT
+        value: https://protocol-talk.openai.azure.com/
+      - key: AZURE_OPENAI_DEPLOYMENT
+        value: gpt-4o-deployment
+      - key: PUBMEDBERT_ENDPOINT_URL
+        value: https://usz78oxlybv4xfh2.eastus.azure.endpoints.huggingface.cloud

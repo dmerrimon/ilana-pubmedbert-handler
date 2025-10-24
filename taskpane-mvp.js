@@ -12,7 +12,7 @@ const CONFIG = {
   AZURE_OPENAI_ENDPOINT: "https://protocol-talk.openai.azure.com/",
   AZURE_OPENAI_DEPLOYMENT: "gpt-4o-deployment",
   PUBMEDBERT_ENDPOINT_URL: "https://usz78oxlybv4xfh2.eastus.azure.endpoints.huggingface.cloud",
-  API_BACKEND_URL: "https://zealous-dune-00e524d0f.3.azurestaticapps.net/api", // Your backend API
+  API_BACKEND_URL: "https://ilana-api.onrender.com", // Your Render backend API
   REAL_TIME_DELAY: 2000, // 2 seconds after typing stops
   MAX_HIGHLIGHTS: 50 // Prevent performance issues
 };
