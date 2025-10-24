@@ -4,72 +4,93 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Protocol Intelligence</title>
+    <title>Ilana</title>
     
     <!-- Office.js -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
     
-    <!-- Styles -->
-    <link rel="stylesheet" href="grammarly-style.css">
-    <link rel="stylesheet" href="feasibility-styles.css">
-    <link rel="stylesheet" href="knowledge-styles.css">
-    <link rel="stylesheet" href="design-optimization-styles.css">
+    <!-- MVP CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div id="container" class="ms-welcome">
-        <header style="background: #151515; color: #ffffff; padding: 20px; text-align: center; display: none;">
-            <img width="90" height="90" src="https://raw.githubusercontent.com/officedev/office-js-snippets/main/samples/images/icon-64.png" alt="Protocol Intelligence" title="Protocol Intelligence" />
-            <h1 style="color: #ffffff; margin: 8px 0 4px; font-weight: 600;">Protocol Intelligence</h1>
-            <p style="color: #ffffff; opacity: 0.9; font-weight: 300;">AI-powered clinical protocol analysis</p>
-        </header>
-        
-        <main id="app-body" class="ms-welcome__main">
-            <div id="welcome-section">
-                
-                <div class="feature-list">
-                    <div class="feature-item">
-                        <span class="feature-icon">✅</span>
-                        <span>FDA & ICH E6 Compliance</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">🎯</span>
-                        <span>Amendment Risk Prediction</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">💡</span>
-                        <span>Smart Writing Suggestions</span>
-                    </div>
+    <div id="container" class="grammarly-container">
+        <!-- Header with Protocol Quality Scores -->
+        <div class="quality-header">
+            <div class="score-badges">
+                <div class="score-badge clarity" id="clarity-badge">
+                    <span class="score-label">Clarity</span>
+                    <span class="score-grade" id="clarity-grade">-</span>
                 </div>
-                
-                <button id="analyze-btn" class="ms-Button ms-Button--primary">
-                    <span class="ms-Button-label">Analyze Protocol</span>
+                <div class="score-badge regulatory" id="regulatory-badge">
+                    <span class="score-label">Regulatory</span>
+                    <span class="score-grade" id="regulatory-grade">-</span>
+                </div>
+                <div class="score-badge feasibility" id="feasibility-badge">
+                    <span class="score-label">Feasibility</span>
+                    <span class="score-grade" id="feasibility-grade">-</span>
+                </div>
+            </div>
+            <div class="amendment-risk" id="amendment-risk">
+                <span class="risk-label">Amendment Risk</span>
+                <span class="risk-score" id="risk-score">Low</span>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Real-time Status -->
+            <div class="status-bar">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot active"></span>
+                    <span class="status-text">Real-time checking active</span>
+                </div>
+                <button class="scan-button" id="scan-button">
+                    <span class="scan-icon">🔍</span>
+                    Scan Document
                 </button>
-                
-                <div style="margin-top: 20px;">
-                    <button id="realtime-toggle" class="ms-Button ms-Button--primary" onclick="toggleRealTimeAnalysis()">
-                        <span class="ms-Button-label">Enable Real-time</span>
-                    </button>
-                    <p style="font-size: 12px; color: #666; margin-top: 8px;">
-                        Real-time analysis monitors document changes and provides instant feedback
-                    </p>
-                </div>
             </div>
-            
-            <div id="analysis-section" style="display: none;">
-                <div id="analysis-loading" style="display: none;">
-                    <div class="loading-spinner"></div>
-                    <p>Analyzing your protocol...</p>
+
+            <!-- Issues Found -->
+            <div class="issues-section" id="issues-section">
+                <div class="section-header">
+                    <h3>Issues Found</h3>
+                    <span class="issue-count" id="issue-count">0</span>
                 </div>
                 
-                <div id="analysis-results" style="display: none;">
-                    <!-- Results will be populated by JavaScript -->
+                <div class="issue-filters">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="compliance">Compliance</button>
+                    <button class="filter-btn" data-filter="feasibility">Feasibility</button>
+                    <button class="filter-btn" data-filter="clarity">Clarity</button>
+                </div>
+
+                <div class="issues-list" id="issues-list">
+                    <!-- Issues will be populated here -->
                 </div>
             </div>
-        </main>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-btn primary" id="accept-all-btn">
+                    <span class="btn-icon">✓</span>
+                    Accept All
+                </button>
+                <button class="action-btn secondary" id="ignore-all-btn">
+                    <span class="btn-icon">✕</span>
+                    Ignore All
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Analyzing protocol compliance...</p>
+        </div>
     </div>
     
     <!-- JavaScript -->
-    <script src="taskpane.js"></script>
+    <script src="taskpane-mvp.js"></script>
 </body>
 </html>
