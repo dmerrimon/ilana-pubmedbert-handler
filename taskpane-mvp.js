@@ -25,12 +25,6 @@ let typingTimer = null;
 let highlightedRanges = [];
 let isInitialized = false;
 
-// Prevent page refresh crashes
-window.addEventListener('beforeunload', function(e) {
-  e.preventDefault();
-  e.returnValue = '';
-  return 'Refreshing will close the add-in. Are you sure?';
-});
 
 // Initialize when Office is ready
 function initializeApp() {
