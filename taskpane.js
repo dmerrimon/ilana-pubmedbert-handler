@@ -66,89 +66,54 @@ async function getDocumentContent() {
 }
 
 async function callProtocolAnalysisAPI(text, options = {}) {
-  // DEMO MODE: Return mock data since API isn't deployed yet
-  console.log("🔍 Demo mode: Analyzing protocol text:", text.substring(0, 100) + "...");
+  const apiBase = "https://protocol-intelligence-api.onrender.com/api";
   
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  return {
-    compliance_analysis: {
-      overall_score: 85,
-      grade: "Good",
-      missing_sections: [
-        "Statistical Analysis Plan details",
-        "Data Safety Monitoring Board charter"
-      ],
-      red_flags: [
-        { severity: "medium", issue: "Inclusion criteria may be too broad", description: "Consider more specific patient population" },
-        { severity: "low", issue: "Primary endpoint timeline unclear", description: "Specify exact measurement timepoints" }
-      ]
-    },
-    feasibility_analysis: {
-      overall_risk: "Medium",
-      risk_factors: [
-        "Target enrollment may be challenging in proposed timeline",
-        "Multiple site coordination requires robust infrastructure"
-      ],
-      recruitment_prediction: "12-18 months for full enrollment"
-    },
-    recommendations: [
-      "Add more specific inclusion criteria to reduce screen failures",
-      "Clarify primary endpoint measurement schedule",
-      "Consider adaptive trial design for efficiency"
-    ]
-  };
-  
-  // Original API call (disabled for demo):
-  // const apiBase = "https://protocol-intelligence-api.onrender.com/api";
-  // 
-  // try {
-  //   console.log("🔍 Calling Protocol Intelligence API...");
-  //   
-  //   const response_disabled = await fetch(`${apiBase}/analyze`, {
-  //     method: "POST", 
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({ 
-  //       text: text,
-  //       context: {
-  //         document_type: "clinical_protocol",
-  //         analysis_type: "comprehensive"
-  //       }
-  //     })
-  //   });
-  // 
-  //   if (!response.ok) {
-  //     throw new Error(`API call failed: ${response.status}`);
-  //   }
-  // 
-  //   const result = await response.json();
-  //   console.log("✅ API Response received");
-  //   return result;
-  //   
-  // } catch (error) {
-  //   console.error("API call failed:", error);
-  //   // Return fallback results
-  //   return {
-  //     compliance: {
-  //       compliance_level: "UNKNOWN",
-  //       compliance_score: 0,
-  //       missing_sections: ["Unable to analyze - service unavailable"],
-  //       recommendations: ["Please check your internet connection and try again"]
-  //     },
-  //     feasibility: {
-  //       risk_level: "UNKNOWN",
-  //       red_flags: [],
-  //       recommendations: ["Service temporarily unavailable"]
-  //     },
-  //     clarity: {
-  //       clarity_score: 0,
-  //       recommendations: ["Service temporarily unavailable"]
-  //     }
-  //   };
-  // }
+  try {
+    console.log("🔍 Calling Protocol Intelligence API...");
+    
+    const response = await fetch(`${apiBase}/analyze`, {
+      method: "POST", 
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        text: text,
+        context: {
+          document_type: "clinical_protocol",
+          analysis_type: "comprehensive"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("✅ API Response received");
+    return result;
+    
+  } catch (error) {
+    console.error("API call failed:", error);
+    // Return fallback results
+    return {
+      compliance: {
+        compliance_level: "UNKNOWN",
+        compliance_score: 0,
+        missing_sections: ["Unable to analyze - service unavailable"],
+        recommendations: ["Please check your internet connection and try again"]
+      },
+      feasibility: {
+        risk_level: "UNKNOWN",
+        red_flags: [],
+        recommendations: ["Service temporarily unavailable"]
+      },
+      clarity: {
+        clarity_score: 0,
+        recommendations: ["Service temporarily unavailable"]
+      }
+    };
+  }
 }
 
 function displayAnalysisResults(results) {

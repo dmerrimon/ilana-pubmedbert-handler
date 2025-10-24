@@ -8,7 +8,7 @@
   <Version>1.0.0.0</Version>
   <ProviderName>Ilana Labs</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Protocol Intelligence"/>
+  <DisplayName DefaultValue="Ilana"/>
   <Description DefaultValue="AI-powered clinical protocol analysis for Microsoft Word"/>
   
   <IconUrl DefaultValue="https://raw.githubusercontent.com/officedev/office-js-snippets/main/samples/images/icon-32.png"/>
