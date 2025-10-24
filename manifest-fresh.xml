@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp 
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:type="TaskPaneApp">
+  
+  <Id>87654321-4321-4321-4321-876543210fed</Id>
+  <Version>2.0.0.0</Version>
+  <ProviderName>Ilana Labs</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Protocol Intelligence Fresh"/>
+  <Description DefaultValue="AI-powered clinical protocol analysis - Fresh Install"/>
+  
+  <IconUrl DefaultValue="https://raw.githubusercontent.com/officedev/office-js-snippets/main/samples/images/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/officedev/office-js-snippets/main/samples/images/icon-64.png"/>
+  
+  <SupportUrl DefaultValue="https://github.com/officedev/office-js"/>
+  
+  <Hosts>
+    <Host Name="Document"/>
+  </Hosts>
+  
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://127.0.0.1:3000/taskpane.html"/>
+  </DefaultSettings>
+  
+  <Permissions>ReadWriteDocument</Permissions>
+</OfficeApp>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Protocol Intelligence</title>
+    
+    <!-- Office.js -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="grammarly-style.css">
+    <link rel="stylesheet" href="feasibility-styles.css">
+    <link rel="stylesheet" href="knowledge-styles.css">
+    <link rel="stylesheet" href="design-optimization-styles.css">
+</head>
+
+<body>
+    <div id="container" class="ms-welcome">
+        <header style="background: #151515; color: #ffffff; padding: 20px; text-align: center; display: none;">
+            <img width="90" height="90" src="https://raw.githubusercontent.com/officedev/office-js-snippets/main/samples/images/icon-64.png" alt="Protocol Intelligence" title="Protocol Intelligence" />
+            <h1 style="color: #ffffff; margin: 8px 0 4px; font-weight: 600;">Protocol Intelligence</h1>
+            <p style="color: #ffffff; opacity: 0.9; font-weight: 300;">AI-powered clinical protocol analysis</p>
+        </header>
+        
+        <main id="app-body" class="ms-welcome__main">
+            <div id="welcome-section">
+                <h2 class="ms-fontSize-xxl ms-fontWeight-light ms-fontColor-neutralPrimary">Welcome</h2>
+                <p class="ms-fontSize-m ms-fontWeight-semilight ms-fontColor-neutralSecondary">
+                    Get real-time compliance checking, amendment risk assessment, and intelligent suggestions for your clinical protocols.
+                </p>
+                
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-icon">✅</span>
+                        <span>FDA & ICH E6 Compliance</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🎯</span>
+                        <span>Amendment Risk Prediction</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">💡</span>
+                        <span>Smart Writing Suggestions</span>
+                    </div>
+                </div>
+                
+                <button id="analyze-btn" class="ms-Button ms-Button--primary">
+                    <span class="ms-Button-label">Analyze Protocol</span>
+                </button>
+                
+                <div style="margin-top: 20px;">
+                    <button id="realtime-toggle" class="ms-Button ms-Button--primary" onclick="toggleRealTimeAnalysis()">
+                        <span class="ms-Button-label">Enable Real-time</span>
+                    </button>
+                    <p style="font-size: 12px; color: #666; margin-top: 8px;">
+                        Real-time analysis monitors document changes and provides instant feedback
+                    </p>
+                </div>
+            </div>
+            
+            <div id="analysis-section" style="display: none;">
+                <div id="analysis-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Analyzing your protocol...</p>
+                </div>
+                
+                <div id="analysis-results" style="display: none;">
+                    <!-- Results will be populated by JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="taskpane.js"></script>
+</body>
+</html>

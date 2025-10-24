@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Protocol Intelligence - Standalone</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    <style>
+        body { font-family: Segoe UI; padding: 20px; }
+        button { background: #0078d4; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #106ebe; }
+        .result { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Protocol Intelligence</h1>
+    <p>AI-powered clinical protocol analysis for Microsoft Word</p>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="analyzeProtocol()">Analyze Protocol</button>
+    <button onclick="insertSample()">Insert Sample Text</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        Office.initialize = function() {
+            console.log("Protocol Intelligence initialized");
+        };
+        
+        function testConnection() {
+            try {
+                Word.run(function (context) {
+                    var body = context.document.body;
+                    body.insertText("✅ Protocol Intelligence connected successfully! " + new Date().toLocaleTimeString(), Word.InsertLocation.end);
+                    return context.sync().then(function() {
+                        showResult("Connection test successful!", "success");
+                    });
+                });
+            } catch (error) {
+                showResult("Connection failed: " + error.message, "warning");
+            }
+        }
+        
+        function analyzeProtocol() {
+            try {
+                Word.run(function (context) {
+                    var body = context.document.body;
+                    context.load(body, "text");
+                    
+                    return context.sync().then(function () {
+                        var text = body.text;
+                        var wordCount = text.split(/\s+/).length;
+                        
+                        // Protocol Intelligence Analysis
+                        var analysis = {
+                            hasObjective: text.toLowerCase().includes('objective'),
+                            hasEndpoint: text.toLowerCase().includes('endpoint') || text.toLowerCase().includes('primary endpoint'),
+                            hasSampleSize: text.toLowerCase().includes('sample size'),
+                            hasInclusion: text.toLowerCase().includes('inclusion criteria'),
+                            hasExclusion: text.toLowerCase().includes('exclusion criteria'),
+                            hasStatistics: text.toLowerCase().includes('statistical') || text.toLowerCase().includes('analysis plan'),
+                            hasStudyDesign: text.toLowerCase().includes('study design') || text.toLowerCase().includes('randomized')
+                        };
+                        
+                        var suggestions = [];
+                        if (!analysis.hasObjective) suggestions.push("📋 Add study objectives section");
+                        if (!analysis.hasEndpoint) suggestions.push("🎯 Define primary endpoint clearly");
+                        if (!analysis.hasSampleSize) suggestions.push("📊 Include sample size calculation");
+                        if (!analysis.hasInclusion) suggestions.push("✅ Add inclusion criteria");
+                        if (!analysis.hasExclusion) suggestions.push("❌ Add exclusion criteria");
+                        if (!analysis.hasStatistics) suggestions.push("📈 Add statistical analysis plan");
+                        if (!analysis.hasStudyDesign) suggestions.push("🔬 Define study design methodology");
+                        
+                        var resultText = "\n\n🔬 PROTOCOL INTELLIGENCE ANALYSIS:\n";
+                        resultText += "📊 Document: " + wordCount + " words analyzed\n";
+                        resultText += "✅ Sections found: " + Object.values(analysis).filter(v => v).length + "/7\n";
+                        
+                        if (suggestions.length > 0) {
+                            resultText += "\n⚠️ RECOMMENDATIONS:\n";
+                            resultText += suggestions.join('\n') + "\n";
+                        } else {
+                            resultText += "\n🎉 Excellent! All key protocol sections detected.\n";
+                        }
+                        
+                        resultText += "\n📅 Analysis completed: " + new Date().toLocaleString();
+                        
+                        body.insertText(resultText, Word.InsertLocation.end);
+                        
+                        return context.sync().then(function() {
+                            var status = suggestions.length === 0 ? "success" : "warning";
+                            showResult(`Analysis complete! Found ${Object.values(analysis).filter(v => v).length}/7 sections. ${suggestions.length} recommendations added.`, status);
+                        });
+                    });
+                });
+            } catch (error) {
+                showResult("Analysis failed: " + error.message, "warning");
+            }
+        }
+        
+        function insertSample() {
+            try {
+                Word.run(function (context) {
+                    var sampleText = `Phase III Clinical Trial Protocol
+
+STUDY TITLE
+A Randomized, Double-Blind, Placebo-Controlled Phase III Study
+
+OBJECTIVE
+Primary: To evaluate the efficacy of the investigational drug
+Secondary: To assess safety and tolerability
+
+STUDY DESIGN
+This is a multicenter, randomized, double-blind, placebo-controlled study.
+
+ENDPOINTS
+Primary endpoint: Overall survival (OS)
+Secondary endpoints: Progression-free survival, response rate
+
+SAMPLE SIZE
+Approximately 300 patients will be enrolled.
+
+INCLUSION CRITERIA
+- Age 18 years or older
+- Confirmed diagnosis
+- ECOG performance status 0-2
+
+EXCLUSION CRITERIA
+- Pregnancy or nursing
+- Severe hepatic impairment
+- Prior experimental therapy
+
+STATISTICAL ANALYSIS
+The primary analysis will use intention-to-treat population.
+Sample size calculated for 80% power.`;
+                    
+                    var body = context.document.body;
+                    body.insertText(sampleText, Word.InsertLocation.start);
+                    
+                    return context.sync().then(function() {
+                        showResult("Sample protocol text inserted! Now click 'Analyze Protocol' to test.", "success");
+                    });
+                });
+            } catch (error) {
+                showResult("Insert failed: " + error.message, "warning");
+            }
+        }
+        
+        function showResult(message, type) {
+            var results = document.getElementById('results');
+            results.innerHTML = '<div class="result ' + type + '">' + message + '</div>';
+        }
+    </script>
+</body>
+</html>
