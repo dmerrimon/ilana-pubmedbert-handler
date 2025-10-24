@@ -5,15 +5,14 @@
 
 /* global document, Office, Word */
 
-// Configuration
+// Configuration - API keys will be loaded from backend API
 const CONFIG = {
-  PINECONE_API_KEY: "pcsk_6UYhbF_UDVavrrjgpxC6W9fn8vaUdCZ6MbboBhmYum18isurrr8DrFFxMzYYexuzwA1YZT",
   PINECONE_INDEX_NAME: "llama-text-embed-v2-index",
   PINECONE_ENVIRONMENT: "gcp-starter",
   AZURE_OPENAI_ENDPOINT: "https://protocol-talk.openai.azure.com/",
-  AZURE_OPENAI_API_KEY: "9yC9Uoz4EQ5BFxkzjOjSaEtrLoKEJ5sIQIQXrvUadTqliTcoZVq9JQQJ99BJACYeBjFXJ3w3AAABACOGwV3",
   AZURE_OPENAI_DEPLOYMENT: "gpt-4o-deployment",
   PUBMEDBERT_ENDPOINT_URL: "https://usz78oxlybv4xfh2.eastus.azure.endpoints.huggingface.cloud",
+  API_BACKEND_URL: "https://zealous-dune-00e524d0f.3.azurestaticapps.net/api", // Your backend API
   REAL_TIME_DELAY: 2000, // 2 seconds after typing stops
   MAX_HIGHLIGHTS: 50 // Prevent performance issues
 };
@@ -153,19 +152,47 @@ async function getDocumentContent() {
 }
 
 async function analyzeProtocol(text) {
-  // TODO: Connect to your Vector DB and AI stack
-  // For now, return mock data with your MVP features
-  
-  return {
-    scores: {
-      clarity: calculateClarityScore(text),
-      regulatory: calculateRegulatoryScore(text),
-      feasibility: calculateFeasibilityScore(text)
-    },
-    amendmentRisk: calculateAmendmentRisk(text),
-    findings: generateFindings(text)
-  };
+  try {
+    console.log("Starting real AI analysis...");
+    
+    // Call your backend API which handles all AI services securely
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/analyze-protocol`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: text.substring(0, 5000) // Limit text size
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Backend API failed: ${response.status}`);
+    }
+    
+    const aiAnalysis = await response.json();
+    
+    return {
+      scores: aiAnalysis.scores,
+      amendmentRisk: aiAnalysis.amendmentRisk,
+      findings: aiAnalysis.findings
+    };
+  } catch (error) {
+    console.error("AI analysis failed, falling back to mock data:", error);
+    // Fallback to mock data if AI fails
+    return {
+      scores: {
+        clarity: calculateClarityScore(text),
+        regulatory: calculateRegulatoryScore(text),
+        feasibility: calculateFeasibilityScore(text)
+      },
+      amendmentRisk: calculateAmendmentRisk(text),
+      findings: generateFindings(text)
+    };
+  }
 }
+
+// AI functions moved to backend API for security
 
 function calculateClarityScore(text) {
   // Mock scoring - replace with your AI analysis
