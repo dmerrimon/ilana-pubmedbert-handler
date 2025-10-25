@@ -183,7 +183,7 @@ Respond in this exact JSON format:
       "title": "Specific Issue Found in Protocol",
       "description": "Detailed explanation of WHY this specific text violates regulations, quoting the problematic phrase",
       "citation": "Exact regulatory citation from retrieved passages",
-      "location": {{"start": [character_position], "length": [number_of_characters]}},
+      "location": {{"start": character_position, "length": number_of_characters}},
       "suggestions": ["Specific rewrite based on regulatory guidance", "Additional compliance step"],
       "quoted_text": "Exact text from protocol that has the issue",
       "evidence": "Quote from retrieved passage that shows this is a violation"
@@ -213,10 +213,17 @@ Respond in this exact JSON format:
         try:
             result = json.loads(content)
             
-            # Validate that findings have specific evidence
+            # Validate and clean up findings
             validated_findings = []
             for finding in result.get('findings', []):
                 if finding.get('quoted_text') and finding.get('evidence'):
+                    # Fix location coordinates if they're arrays
+                    if 'location' in finding:
+                        location = finding['location']
+                        if isinstance(location.get('start'), list) and location['start']:
+                            location['start'] = location['start'][0]
+                        if isinstance(location.get('length'), list) and location['length']:
+                            location['length'] = location['length'][0]
                     validated_findings.append(finding)
                     
             result['findings'] = validated_findings
@@ -261,7 +268,8 @@ async def health_check():
     return {
         "status": "healthy",
         "pinecone": index is not None,
-        "azure_openai": bool(AZURE_OPENAI_API_KEY),
+        "azure_openai": azure_client is not None,
+        "azure_openai_key": bool(AZURE_OPENAI_API_KEY),
         "pubmedbert": bool(PUBMEDBERT_ENDPOINT_URL)
     }
 
