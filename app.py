@@ -1,7 +1,7 @@
-# Simple wrapper for Render deployment
+# Simple import for Render deployment
 from main import app
 
-# For gunicorn compatibility
+# Direct reference for gunicorn
 application = app
 
 if __name__ == "__main__":
