@@ -1,10 +1,23 @@
-# Simple import for Render deployment
+"""
+ASGI application entry point for Render deployment
+This ensures FastAPI works properly with various deployment methods
+"""
+import os
 from main import app
 
-# Direct reference for gunicorn
+# ASGI application for modern deployment
 application = app
+
+# For gunicorn compatibility (if needed)
+def application_wsgi(environ, start_response):
+    """WSGI wrapper for legacy deployment systems"""
+    import asyncio
+    from asgiref.wsgi import WsgiToAsgi
+    
+    asgi_app = WsgiToAsgi(app)
+    return asgi_app(environ, start_response)
 
 if __name__ == "__main__":
     import uvicorn
-    import os
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
