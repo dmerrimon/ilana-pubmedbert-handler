@@ -11,8 +11,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
-import openai
-import pinecone
+from openai import AzureOpenAI
+from pinecone import Pinecone
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -42,18 +42,24 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Initialize Pinecone
 try:
-    pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
-    index = pinecone.Index(PINECONE_INDEX_NAME)
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    index = pc.Index(PINECONE_INDEX_NAME)
     logger.info("Pinecone initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize Pinecone: {e}")
     index = None
 
 # Initialize Azure OpenAI
-openai.api_type = "azure"
-openai.api_base = AZURE_OPENAI_ENDPOINT
-openai.api_version = "2024-02-15-preview"
-openai.api_key = AZURE_OPENAI_API_KEY
+try:
+    azure_client = AzureOpenAI(
+        api_key=AZURE_OPENAI_API_KEY,
+        api_version="2024-02-15-preview",
+        azure_endpoint=AZURE_OPENAI_ENDPOINT
+    )
+    logger.info("Azure OpenAI initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Azure OpenAI: {e}")
+    azure_client = None
 
 class AnalysisRequest(BaseModel):
     text: str
@@ -120,6 +126,9 @@ async def query_pinecone(embeddings: List[float]) -> Dict:
         return {"matches": []}
 
 async def analyze_with_azure_openai(text: str, similar_findings: Dict) -> Dict:
+    if not azure_client:
+        logger.error("Azure OpenAI client not initialized")
+        return {"error": "Azure OpenAI client not available"}
     """Analyze protocol with Azure OpenAI using RAG system"""
     try:
         # Extract relevant passages from similar findings
@@ -177,8 +186,8 @@ Respond in this exact JSON format:
   ]
 }}"""
 
-        response = openai.ChatCompletion.create(
-            engine=AZURE_OPENAI_DEPLOYMENT,
+        response = azure_client.chat.completions.create(
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {
                     "role": "system",
