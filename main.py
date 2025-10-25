@@ -32,8 +32,8 @@ app.add_middleware(
 
 # Configuration from environment variables
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "llama-text-embed-v2-index")
-PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "gcp-starter")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "clinical-protocols")
+PINECONE_HOST = os.getenv("PINECONE_HOST")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "https://protocol-talk.openai.azure.com/")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-deployment")
@@ -43,7 +43,12 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 # Initialize Pinecone
 try:
     pc = Pinecone(api_key=PINECONE_API_KEY)
-    index = pc.Index(PINECONE_INDEX_NAME)
+    if PINECONE_HOST:
+        # For serverless indexes, specify the host
+        index = pc.Index(PINECONE_INDEX_NAME, host=PINECONE_HOST)
+    else:
+        # For pod-based indexes
+        index = pc.Index(PINECONE_INDEX_NAME)
     logger.info("Pinecone initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize Pinecone: {e}")

@@ -6,10 +6,12 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
     # Force redeploy to use latest commit
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: PINECONE_INDEX_NAME
-        value: llama-text-embed-v2-index
-      - key: PINECONE_ENVIRONMENT
-        value: gcp-starter
+        value: clinical-protocols
+      - key: PINECONE_HOST
+        value: https://clinical-protocols-gdwejfu.svc.eastus2-5e25.prod-azure.pinecone.io
       - key: AZURE_OPENAI_ENDPOINT
         value: https://protocol-talk.openai.azure.com/
       - key: AZURE_OPENAI_DEPLOYMENT
