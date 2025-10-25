@@ -9,7 +9,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: PINECONE_INDEX_NAME
-        value: clinical-protocols
+        value: protocol-intelligence-768
       - key: PINECONE_HOST
         value: https://clinical-protocols-gdwejfu.svc.eastus2-5e25.prod-azure.pinecone.io
       - key: AZURE_OPENAI_ENDPOINT
