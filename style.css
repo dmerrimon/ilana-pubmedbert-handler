@@ -340,6 +340,28 @@ body {
   color: var(--gray-800);
 }
 
+.issue-quoted-text {
+  background: var(--gray-100);
+  border-left: 3px solid var(--grammarly-red);
+  padding: var(--spacing-sm);
+  margin: var(--spacing-sm) 0;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--gray-700);
+}
+
+.issue-evidence {
+  background: var(--grammarly-blue-light);
+  border-left: 3px solid var(--grammarly-blue);
+  padding: var(--spacing-sm);
+  margin: var(--spacing-sm) 0;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--gray-700);
+  font-style: italic;
+}
+
 .issue-actions {
   display: flex;
   gap: var(--spacing-sm);

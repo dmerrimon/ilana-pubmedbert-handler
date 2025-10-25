@@ -120,17 +120,40 @@ async def query_pinecone(embeddings: List[float]) -> Dict:
         return {"matches": []}
 
 async def analyze_with_azure_openai(text: str, similar_findings: Dict) -> Dict:
-    """Analyze protocol with Azure OpenAI"""
+    """Analyze protocol with Azure OpenAI using RAG system"""
     try:
-        prompt = f"""Analyze this clinical protocol for ICH-GCP and FDA compliance:
+        # Extract relevant passages from similar findings
+        retrieved_passages = []
+        for i, match in enumerate(similar_findings.get('matches', [])[:6]):
+            if hasattr(match, 'metadata') and match.metadata:
+                retrieved_passages.append(f"{i+1}) [Source: {match.metadata.get('source', 'Unknown')}]: \"{match.metadata.get('text', '')}\"")
+        
+        passages_text = "\n".join(retrieved_passages) if retrieved_passages else "No similar protocols found in database."
+        
+        # Advanced RAG prompt with provenance and specific analysis
+        prompt = f"""You are a clinical protocol compliance assistant specializing in ICH-GCP and FDA regulatory requirements. 
 
-PROTOCOL TEXT:
-{text[:2000]}
+INSTRUCTIONS:
+1. Analyze the protocol text below for specific compliance issues
+2. Use ONLY the retrieved regulatory passages to identify violations
+3. For each finding, cite the specific passage and explain WHY it's non-compliant
+4. Identify exact text locations that need revision
+5. Provide specific, actionable recommendations based on the evidence
 
-SIMILAR KNOWN ISSUES:
-{json.dumps(similar_findings.get('matches', [])[:3])}
+PROTOCOL TEXT TO ANALYZE:
+{text[:3000]}
 
-Provide analysis in this exact JSON format:
+RETRIEVED REGULATORY PASSAGES:
+{passages_text}
+
+ANALYSIS REQUIREMENTS:
+- If passages don't provide evidence for a finding, don't make that finding
+- Quote specific phrases from the protocol that violate regulations
+- Explain exactly WHY each violation matters for compliance
+- Provide specific rewrite suggestions based on the regulatory guidance
+- Include character positions for highlighting problematic text
+
+Respond in this exact JSON format:
 {{
   "scores": {{
     "clarity": "A|B|C|D|F",
@@ -140,14 +163,16 @@ Provide analysis in this exact JSON format:
   "amendmentRisk": "low|medium|high",
   "findings": [
     {{
-      "id": "unique-id",
+      "id": "specific-issue-id",
       "type": "compliance|feasibility|clarity",
       "severity": "high|medium|low",
-      "title": "Issue Title",
-      "description": "Detailed description",
-      "citation": "ICH E6 R3 or FDA guideline reference",
-      "location": {{"start": 0, "length": 20}},
-      "suggestions": ["suggestion1", "suggestion2"]
+      "title": "Specific Issue Found in Protocol",
+      "description": "Detailed explanation of WHY this specific text violates regulations, quoting the problematic phrase",
+      "citation": "Exact regulatory citation from retrieved passages",
+      "location": {{"start": [character_position], "length": [number_of_characters]}},
+      "suggestions": ["Specific rewrite based on regulatory guidance", "Additional compliance step"],
+      "quoted_text": "Exact text from protocol that has the issue",
+      "evidence": "Quote from retrieved passage that shows this is a violation"
     }}
   ]
 }}"""
@@ -157,40 +182,58 @@ Provide analysis in this exact JSON format:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert clinical protocol reviewer specializing in ICH-GCP and FDA compliance. Always respond with valid JSON only."
+                    "content": "You are an expert clinical protocol compliance reviewer. Use only the evidence in retrieved passages. If passages don't provide evidence, say 'insufficient evidence'. Always include specific quotes and character positions."
                 },
                 {
                     "role": "user", 
                     "content": prompt
                 }
             ],
-            max_tokens=2000,
+            max_tokens=3000,
             temperature=0.1
         )
         
         content = response.choices[0].message.content
-        return json.loads(content)
+        
+        # Parse and validate the response
+        try:
+            result = json.loads(content)
+            
+            # Validate that findings have specific evidence
+            validated_findings = []
+            for finding in result.get('findings', []):
+                if finding.get('quoted_text') and finding.get('evidence'):
+                    validated_findings.append(finding)
+                    
+            result['findings'] = validated_findings
+            return result
+            
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse OpenAI response: {content}")
+            raise
         
     except Exception as e:
         logger.error(f"Azure OpenAI analysis failed: {e}")
-        # Return fallback analysis
+        # Return empty findings if AI fails - no generic mock data
         return {
             "scores": {
-                "clarity": "B",
+                "clarity": "C",
                 "regulatory": "C", 
-                "feasibility": "B"
+                "feasibility": "C"
             },
             "amendmentRisk": "medium",
             "findings": [
                 {
-                    "id": "ai-analysis-failed",
+                    "id": "analysis-error",
                     "type": "compliance",
                     "severity": "medium",
-                    "title": "AI Analysis Unavailable",
-                    "description": "Could not complete full AI analysis. Manual review recommended.",
-                    "citation": "ICH E6 (R3): Good Clinical Practice guidelines require thorough protocol review.",
-                    "location": {"start": 0, "length": 50},
-                    "suggestions": ["Conduct manual compliance review", "Retry analysis later"]
+                    "title": "Analysis Service Unavailable",
+                    "description": f"Protocol analysis service is currently unavailable: {str(e)}. Please retry or consult regulatory counsel.",
+                    "citation": "Manual review recommended when automated analysis fails",
+                    "location": {"start": 0, "length": 10},
+                    "suggestions": ["Retry analysis", "Consult regulatory expert"],
+                    "quoted_text": "",
+                    "evidence": "Service unavailable"
                 }
             ]
         }

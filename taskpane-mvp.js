@@ -177,184 +177,35 @@ async function analyzeProtocol(text) {
     
     return aiAnalysis;
   } catch (error) {
-    console.log("Backend API failed, using mock data:", error.message);
+    console.error("Backend API failed:", error.message);
     
-    // Ensure we have text to analyze
-    if (!text || text.trim().length === 0) {
-      console.log("No text provided, using sample text");
-      text = "This is a clinical trial protocol for testing a new drug. The study will include informed consent procedures and adverse event reporting.";
-    }
-    
-    // Fallback to mock data with working functions
-    const mockAnalysis = {
+    // Return error state instead of mock data
+    return {
       scores: {
-        clarity: calculateClarityScore(text),
-        regulatory: calculateRegulatoryScore(text),
-        feasibility: calculateFeasibilityScore(text)
+        clarity: "?",
+        regulatory: "?",
+        feasibility: "?"
       },
-      amendmentRisk: calculateAmendmentRisk(text),
-      findings: generateFindings(text)
+      amendmentRisk: "unknown",
+      findings: [
+        {
+          id: "connection-error",
+          type: "compliance",
+          severity: "high",
+          title: "Analysis Service Unavailable",
+          description: `Cannot connect to AI analysis service: ${error.message}. Please check your internet connection and try again.`,
+          citation: "Service connectivity required for protocol analysis",
+          location: { start: 0, length: 0 },
+          suggestions: ["Check internet connection", "Retry analysis", "Contact support if problem persists"],
+          quoted_text: "",
+          evidence: "Network connectivity issue"
+        }
+      ]
     };
-    
-    console.log("Mock analysis result:", mockAnalysis);
-    return mockAnalysis;
   }
 }
 
-// AI functions moved to backend API for security
-
-function calculateClarityScore(text) {
-  // Mock scoring - replace with your AI analysis
-  const wordCount = text.split(/\\s+/).length;
-  const sentences = text.split(/[.!?]+/).length;
-  const avgWordsPerSentence = wordCount / sentences;
-  
-  if (avgWordsPerSentence < 15) return "A";
-  if (avgWordsPerSentence < 20) return "B";
-  if (avgWordsPerSentence < 25) return "C";
-  if (avgWordsPerSentence < 30) return "D";
-  return "F";
-}
-
-function calculateRegulatoryScore(text) {
-  // Mock regulatory compliance check
-  const requiredSections = [
-    "informed consent",
-    "adverse event",
-    "data safety monitoring",
-    "statistical analysis",
-    "inclusion criteria",
-    "exclusion criteria"
-  ];
-  
-  const foundSections = requiredSections.filter(section => 
-    text.toLowerCase().includes(section)
-  );
-  
-  const compliance = foundSections.length / requiredSections.length;
-  
-  if (compliance >= 0.9) return "A";
-  if (compliance >= 0.8) return "B";
-  if (compliance >= 0.7) return "C";
-  if (compliance >= 0.6) return "D";
-  return "F";
-}
-
-function calculateFeasibilityScore(text) {
-  // Mock feasibility analysis
-  const riskFactors = [
-    "rare disease",
-    "pediatric",
-    "international",
-    "multiple endpoints",
-    "complex intervention"
-  ];
-  
-  const foundRisks = riskFactors.filter(risk => 
-    text.toLowerCase().includes(risk)
-  );
-  
-  if (foundRisks.length === 0) return "A";
-  if (foundRisks.length === 1) return "B";
-  if (foundRisks.length === 2) return "C";
-  if (foundRisks.length === 3) return "D";
-  return "F";
-}
-
-function calculateAmendmentRisk(text) {
-  // Mock amendment risk prediction
-  const riskFactors = [
-    "unclear endpoint",
-    "broad inclusion",
-    "complex protocol",
-    "multiple sites",
-    "novel intervention"
-  ];
-  
-  const foundRisks = riskFactors.filter(risk => 
-    text.toLowerCase().includes(risk.replace(" ", ""))
-  );
-  
-  if (foundRisks.length === 0) return "low";
-  if (foundRisks.length <= 2) return "medium";
-  return "high";
-}
-
-function generateFindings(text) {
-  console.log("Generating findings for text length:", text.length);
-  const findings = [];
-  
-  // Always add some demo findings to show functionality
-  findings.push({
-    id: "demo-compliance",
-    type: "compliance",
-    severity: "high",
-    title: "ICH E6 Compliance Review Required",
-    description: "Protocol requires review for ICH E6 (R3) Good Clinical Practice compliance.",
-    citation: "ICH E6 (R3) §4.8: Informed consent is a process by which a subject voluntarily confirms his or her willingness to participate in a particular trial.",
-    location: { start: 0, length: 50 },
-    suggestions: ["Review informed consent procedures", "Add GCP compliance checklist"]
-  });
-  
-  findings.push({
-    id: "demo-feasibility",
-    type: "feasibility", 
-    severity: "medium",
-    title: "Enrollment Feasibility Assessment",
-    description: "Consider potential recruitment challenges and timeline implications.",
-    citation: "FDA Guidance for Industry: Adaptive Clinical Trial Designs for Drugs and Biologics",
-    location: { start: 50, length: 30 },
-    suggestions: ["Assess site capabilities", "Plan for adaptive enrollment", "Include backup sites"]
-  });
-  
-  findings.push({
-    id: "demo-clarity",
-    type: "clarity",
-    severity: "low",
-    title: "Protocol Language Clarity",
-    description: "Some sections could benefit from clearer, more concise language.",
-    citation: "FDA Plain Language Guidelines: Use clear, concise language in regulatory documents.",
-    location: { start: 100, length: 25 },
-    suggestions: ["Simplify technical language", "Use active voice", "Break long sentences"]
-  });
-  
-  // Compliance issues
-  if (!text.toLowerCase().includes("informed consent")) {
-    findings.push({
-      id: "ic-missing",
-      type: "compliance",
-      severity: "high",
-      title: "Missing Informed Consent Section",
-      description: "Protocol must include detailed informed consent procedures.",
-      citation: "ICH E6 (R3) §4.8: Informed consent is a process by which a subject voluntarily confirms his or her willingness to participate in a particular trial.",
-      location: { start: 0, length: 20 },
-      suggestions: ["Add informed consent section", "Include consent form templates"]
-    });
-  }
-  
-  console.log("Generated", findings.length, "findings");
-  return findings;
-}
-
-function findLongSentences(text) {
-  // Find sentences longer than 30 words
-  const sentences = text.split(/[.!?]+/);
-  const longSentences = [];
-  
-  let currentPos = 0;
-  sentences.forEach(sentence => {
-    const wordCount = sentence.trim().split(/\\s+/).length;
-    if (wordCount > 30) {
-      longSentences.push({
-        start: currentPos,
-        length: sentence.length
-      });
-    }
-    currentPos += sentence.length + 1;
-  });
-  
-  return longSentences;
-}
+// All AI analysis functions moved to backend API for security and accuracy
 
 function updateQualityScores(scores) {
   // Update score badges
@@ -412,6 +263,21 @@ function displayIssues(issues) {
 function createIssueElement(issue) {
   const div = document.createElement("div");
   div.className = `issue-item ${issue.type}`;
+  
+  // Build quoted text section if available
+  const quotedTextHtml = issue.quoted_text ? `
+    <div class="issue-quoted-text">
+      <strong>Problematic Text:</strong> "${issue.quoted_text}"
+    </div>
+  ` : '';
+  
+  // Build evidence section if available
+  const evidenceHtml = issue.evidence ? `
+    <div class="issue-evidence">
+      <strong>Regulatory Evidence:</strong> ${issue.evidence}
+    </div>
+  ` : '';
+  
   div.innerHTML = `
     <div class="issue-header">
       <span class="issue-type ${issue.type}">${issue.type}</span>
@@ -419,6 +285,8 @@ function createIssueElement(issue) {
     </div>
     <div class="issue-title">${issue.title}</div>
     <div class="issue-description">${issue.description}</div>
+    ${quotedTextHtml}
+    ${evidenceHtml}
     <div class="issue-citation">
       <strong>Source:</strong> ${issue.citation}
     </div>
@@ -442,16 +310,26 @@ function createIssueElement(issue) {
 }
 
 async function addInlineHighlights(issues) {
+  console.log(`Adding highlights for ${issues.length} issues`);
+  
   return Word.run(async (context) => {
     try {
       // Clear existing highlights
       await clearHighlights(context);
       
-      // Add new highlights
-      for (const issue of issues.slice(0, CONFIG.MAX_HIGHLIGHTS)) {
-        if (issue.location) {
-          await addHighlight(context, issue);
-        }
+      // Only add highlights for issues that have specific locations and quoted text
+      const validIssues = issues.filter(issue => 
+        issue.location && 
+        issue.location.start >= 0 && 
+        issue.location.length > 0 &&
+        issue.quoted_text
+      );
+      
+      console.log(`Found ${validIssues.length} valid issues with locations`);
+      
+      // Add new highlights for valid issues only
+      for (const issue of validIssues.slice(0, CONFIG.MAX_HIGHLIGHTS)) {
+        await addHighlight(context, issue);
       }
       
       await context.sync();
@@ -463,36 +341,64 @@ async function addInlineHighlights(issues) {
 
 async function addHighlight(context, issue) {
   try {
-    const range = context.document.body.getRange();
-    context.load(range, "text");
+    console.log(`Highlighting issue: ${issue.title} at position ${issue.location.start}-${issue.location.start + issue.location.length}`);
+    
+    const body = context.document.body;
+    context.load(body, "text");
     await context.sync();
     
-    // Find the text to highlight
-    const searchResults = range.search(issue.location.text || "", {
-      matchCase: false,
-      matchWholeWord: false
-    });
-    context.load(searchResults, "items");
-    await context.sync();
+    // Create range from specific character positions
+    const startPos = Math.max(0, issue.location.start);
+    const endPos = Math.min(body.text.length, startPos + issue.location.length);
     
-    if (searchResults.items.length > 0) {
-      const highlightRange = searchResults.items[0];
+    if (startPos < endPos && startPos < body.text.length) {
+      // Search for the quoted text around the specified location
+      let searchText = issue.quoted_text;
+      if (!searchText || searchText.length < 3) {
+        // If no quoted text, use a portion of the document at that location
+        searchText = body.text.substring(startPos, endPos).trim();
+      }
       
-      // Apply Grammarly-style highlighting
-      const colorMap = {
-        compliance: "#f5574e", // Red underline
-        feasibility: "#ffd93d", // Yellow underline  
-        clarity: "#4285f4" // Blue underline
-      };
-      
-      highlightRange.font.highlightColor = colorMap[issue.type] || "#4285f4";
-      highlightRange.font.underline = Word.UnderlineType.single;
-      
-      // Store reference for later removal
-      highlightedRanges.push(highlightRange);
+      if (searchText.length > 0) {
+        const searchResults = body.search(searchText, {
+          matchCase: false,
+          matchWholeWord: false
+        });
+        context.load(searchResults, "items");
+        await context.sync();
+        
+        if (searchResults.items.length > 0) {
+          const highlightRange = searchResults.items[0];
+          
+          // Apply Grammarly-style highlighting based on issue type
+          const colorMap = {
+            compliance: "#ffebee", // Light red background
+            feasibility: "#fff8e1", // Light yellow background  
+            clarity: "#e3f2fd" // Light blue background
+          };
+          
+          const underlineMap = {
+            compliance: "#f44336", // Red underline
+            feasibility: "#ff9800", // Orange underline
+            clarity: "#2196f3" // Blue underline
+          };
+          
+          // Set background color and underline
+          highlightRange.font.highlightColor = colorMap[issue.type] || "#e3f2fd";
+          highlightRange.font.underline = Word.UnderlineType.single;
+          highlightRange.font.underlineColor = underlineMap[issue.type] || "#2196f3";
+          
+          // Store reference for later removal
+          highlightedRanges.push(highlightRange);
+          
+          console.log(`Successfully highlighted: "${searchText.substring(0, 50)}..."`);
+        } else {
+          console.log(`No match found for: "${searchText.substring(0, 50)}..."`);
+        }
+      }
     }
   } catch (error) {
-    console.error("Individual highlight failed:", error);
+    console.error(`Failed to highlight issue "${issue.title}":`, error);
   }
 }
 
