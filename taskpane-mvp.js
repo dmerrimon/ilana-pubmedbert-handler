@@ -158,7 +158,7 @@ async function analyzeProtocol(text) {
     console.log("Trying backend API...");
     
     // Call your backend API which handles all AI services securely
-    const response = await fetch(`${CONFIG.API_BACKEND_URL}/analyze-protocol`, {
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-protocol`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -134,18 +134,45 @@ async function getDocumentContent() {
 }
 
 async function analyzeProtocol(text) {
-  // TODO: Connect to your Vector DB and AI stack
-  // For now, return mock data with your MVP features
+  console.log("Analyzing protocol text:", text.substring(0, 100) + "...");
   
-  return {
-    scores: {
-      clarity: calculateClarityScore(text),
-      regulatory: calculateRegulatoryScore(text),
-      feasibility: calculateFeasibilityScore(text)
-    },
-    amendmentRisk: calculateAmendmentRisk(text),
-    findings: generateFindings(text)
-  };
+  try {
+    console.log("Trying backend API...");
+    
+    // Call your backend API which handles all AI services securely
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-protocol`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: text.substring(0, 5000) // Limit text size
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Backend API response:", result);
+    return result;
+
+  } catch (error) {
+    console.error("Backend API failed:", error);
+    console.log("Falling back to mock analysis...");
+    
+    // Fallback to mock analysis if backend fails
+    return {
+      scores: {
+        clarity: calculateClarityScore(text),
+        regulatory: calculateRegulatoryScore(text),
+        feasibility: calculateFeasibilityScore(text)
+      },
+      amendmentRisk: calculateAmendmentRisk(text),
+      findings: generateFindings(text)
+    };
+  }
 }
 
 function calculateClarityScore(text) {
