@@ -6,6 +6,7 @@ Handles AI analysis using PubMedBERT, Pinecone, and Azure OpenAI
 import os
 import json
 import logging
+import time
 from typing import Dict, List, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,6 +69,12 @@ except Exception as e:
 
 class AnalysisRequest(BaseModel):
     text: str
+
+class FeedbackRequest(BaseModel):
+    finding_id: str
+    action: str  # "accept", "ignore", "improve"
+    user_feedback: str = ""
+    protocol_text: str = ""
 
 class Finding(BaseModel):
     id: str
@@ -144,28 +151,51 @@ async def analyze_with_azure_openai(text: str, similar_findings: Dict) -> Dict:
         
         passages_text = "\n".join(retrieved_passages) if retrieved_passages else "No similar protocols found in database."
         
-        # Advanced RAG prompt with provenance and specific analysis
-        prompt = f"""You are a clinical protocol compliance assistant specializing in ICH-GCP and FDA regulatory requirements. 
-
-INSTRUCTIONS:
-1. Analyze the protocol text below for specific compliance issues
-2. Use ONLY the retrieved regulatory passages to identify violations
-3. For each finding, cite the specific passage and explain WHY it's non-compliant
-4. Identify exact text locations that need revision
-5. Provide specific, actionable recommendations based on the evidence
+        # Check if we have meaningful regulatory context
+        has_regulatory_context = any("regulation" in p.lower() or "ich" in p.lower() or "fda" in p.lower() 
+                                    for p in retrieved_passages)
+        
+        # Enhanced prompt with better scoring logic  
+        context_note = "Note: Analysis based on clinical protocol best practices as limited regulatory guidance available." if not has_regulatory_context else ""
+        
+        prompt = f"""You are a clinical protocol compliance expert. Analyze the protocol text and provide intelligent, nuanced scoring.
 
 PROTOCOL TEXT TO ANALYZE:
 {text[:3000]}
 
-RETRIEVED REGULATORY PASSAGES:
+SIMILAR PROTOCOLS IN DATABASE:
 {passages_text}
 
-ANALYSIS REQUIREMENTS:
-- If passages don't provide evidence for a finding, don't make that finding
-- Quote specific phrases from the protocol that violate regulations
-- Explain exactly WHY each violation matters for compliance
-- Provide specific rewrite suggestions based on the regulatory guidance
-- Include character positions for highlighting problematic text
+{context_note}
+
+INTELLIGENT SCORING CRITERIA (Give realistic scores, not always F):
+- CLARITY (A-F): Structure, readability, definitions, methodology description
+  A: Excellent clarity, all terms defined, methodology clear
+  B: Good clarity with minor ambiguities  
+  C: Adequate clarity but some unclear sections
+  D: Poor clarity, multiple ambiguous sections
+  F: Very poor clarity, difficult to understand
+
+- REGULATORY (A-F): ICH-GCP and FDA compliance
+  A: Full compliance with all requirements
+  B: Minor compliance gaps that are easily fixed
+  C: Some compliance issues requiring attention
+  D: Major compliance gaps
+  F: Significant non-compliance
+
+- FEASIBILITY (A-F): Operational practicality
+  A: Highly feasible design
+  B: Generally feasible with minor challenges
+  C: Moderate feasibility challenges
+  D: Significant operational hurdles
+  F: Impractical or unfeasible design
+
+IMPORTANT: 
+- Score based on actual protocol quality, not just presence of issues
+- Well-written protocols should get A/B grades
+- Only poorly written protocols should get D/F grades  
+- Be realistic - most protocols are C or better
+- Focus on substantial issues, not nitpicking
 
 Respond in this exact JSON format:
 {{
@@ -177,16 +207,16 @@ Respond in this exact JSON format:
   "amendmentRisk": "low|medium|high",
   "findings": [
     {{
-      "id": "specific-issue-id",
+      "id": "finding-{random_id}",
       "type": "compliance|feasibility|clarity",
       "severity": "high|medium|low",
-      "title": "Specific Issue Found in Protocol",
-      "description": "Detailed explanation of WHY this specific text violates regulations, quoting the problematic phrase",
-      "citation": "Exact regulatory citation from retrieved passages",
-      "location": {{"start": character_position, "length": number_of_characters}},
-      "suggestions": ["Specific rewrite based on regulatory guidance", "Additional compliance step"],
-      "quoted_text": "Exact text from protocol that has the issue",
-      "evidence": "Quote from retrieved passage that shows this is a violation"
+      "title": "Issue Title",
+      "description": "Specific issue description with actionable guidance",
+      "citation": "Regulatory citation or best practice reference", 
+      "location": {{"start": 0, "length": 50}},
+      "suggestions": ["Specific improvement suggestion"],
+      "quoted_text": "Relevant text from protocol if applicable",
+      "evidence": "Supporting evidence or reasoning"
     }}
   ]
 }}"""
@@ -216,7 +246,14 @@ Respond in this exact JSON format:
             # Validate and clean up findings
             validated_findings = []
             for finding in result.get('findings', []):
-                if finding.get('quoted_text') and finding.get('evidence'):
+                # More lenient validation - require at least title and description
+                if finding.get('title') and finding.get('description'):
+                    # Ensure required fields have defaults
+                    finding.setdefault('quoted_text', '')
+                    finding.setdefault('evidence', 'Analysis-based finding')
+                    finding.setdefault('citation', 'Best practice guidance')
+                    finding.setdefault('suggestions', ['Review and improve this section'])
+                    
                     # Fix location coordinates if they're arrays
                     if 'location' in finding:
                         location = finding['location']
@@ -224,6 +261,9 @@ Respond in this exact JSON format:
                             location['start'] = location['start'][0]
                         if isinstance(location.get('length'), list) and location['length']:
                             location['length'] = location['length'][0]
+                    else:
+                        finding['location'] = {'start': 0, 'length': 10}
+                    
                     validated_findings.append(finding)
                     
             result['findings'] = validated_findings
@@ -296,6 +336,52 @@ async def analyze_protocol(request: AnalysisRequest):
     except Exception as e:
         logger.error(f"Analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.post("/api/feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """Collect user feedback to improve AI analysis"""
+    try:
+        logger.info(f"Received feedback: {request.action} for finding {request.finding_id}")
+        
+        # Store feedback for future model improvement
+        feedback_data = {
+            "timestamp": json.dumps({"$date": {"$numberLong": str(int(time.time() * 1000))}}),
+            "finding_id": request.finding_id,
+            "action": request.action,
+            "user_feedback": request.user_feedback,
+            "protocol_text_sample": request.protocol_text[:200] if request.protocol_text else ""
+        }
+        
+        # Store in Pinecone as feedback vector for future learning
+        if index and request.protocol_text:
+            try:
+                # Get embeddings for the feedback context
+                embeddings = await get_pubmedbert_embeddings(request.user_feedback + " " + request.protocol_text[:500])
+                
+                # Store feedback with metadata
+                feedback_vector = {
+                    "id": f"feedback_{request.finding_id}_{int(time.time())}",
+                    "values": embeddings,
+                    "metadata": {
+                        "type": "user_feedback",
+                        "action": request.action,
+                        "finding_id": request.finding_id,
+                        "feedback_text": request.user_feedback,
+                        "source": "user_feedback_loop"
+                    }
+                }
+                
+                index.upsert(vectors=[feedback_vector])
+                logger.info("Feedback stored in vector database")
+                
+            except Exception as e:
+                logger.warning(f"Could not store feedback in vector DB: {e}")
+        
+        return {"status": "success", "message": "Feedback received and will improve future analysis"}
+        
+    except Exception as e:
+        logger.error(f"Feedback submission failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Feedback submission failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

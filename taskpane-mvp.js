@@ -25,6 +25,49 @@ let highlightedRanges = [];
 let isInitialized = false;
 
 
+// Feedback system for AI improvement
+async function submitFeedback(findingId, action, userFeedback) {
+  try {
+    // Get current document text for context
+    let documentText = "";
+    try {
+      await Word.run(async (context) => {
+        const body = context.document.body;
+        context.load(body, "text");
+        await context.sync();
+        documentText = body.text;
+      });
+    } catch (error) {
+      console.log("Could not get document text for feedback");
+    }
+    
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        finding_id: findingId,
+        action: action,
+        user_feedback: userFeedback,
+        protocol_text: documentText.substring(0, 1000) // Send sample for context
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Feedback submission failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Feedback submitted successfully:", result);
+    return result;
+
+  } catch (error) {
+    console.error("Failed to submit feedback:", error);
+    throw error;
+  }
+}
+
 // Initialize when Office is ready
 function initializeApp() {
   if (isInitialized) return;
@@ -438,30 +481,58 @@ function filterIssues(filterType) {
   });
   document.querySelector(`[data-filter="${filterType}"]`).classList.add("active");
   
+  // Make sure currentIssues exists and has data
+  if (!currentIssues || currentIssues.length === 0) {
+    console.log("No current issues to filter");
+    return;
+  }
+  
   // Filter issues
   let filteredIssues = currentIssues;
   if (filterType !== "all") {
     filteredIssues = currentIssues.filter(issue => issue.type === filterType);
   }
   
+  console.log(`Filtering by ${filterType}: ${filteredIssues.length} issues found`);
   displayIssues(filteredIssues);
 }
 
-function acceptSuggestion(issueId) {
+async function acceptSuggestion(issueId) {
   console.log("Accepting suggestion:", issueId);
-  // TODO: Implement suggestion acceptance
-  // This would apply the suggested changes to the document
   
-  // Remove issue from list
-  removeIssue(issueId);
+  try {
+    // Send feedback to backend for AI improvement
+    await submitFeedback(issueId, "accept", "User accepted this suggestion");
+    
+    // Apply the suggested changes to the document
+    // TODO: Implement actual document modification
+    console.log("Suggestion accepted and feedback sent");
+    
+    // Remove issue from list
+    removeIssue(issueId);
+    
+  } catch (error) {
+    console.error("Error accepting suggestion:", error);
+  }
 }
 
-function ignoreSuggestion(issueId) {
+async function ignoreSuggestion(issueId) {
   console.log("Ignoring suggestion:", issueId);
-  // TODO: Store ignored suggestions to avoid re-showing
   
-  // Remove issue from list
-  removeIssue(issueId);
+  try {
+    // Send feedback to backend for AI improvement
+    await submitFeedback(issueId, "ignore", "User ignored this suggestion");
+    
+    console.log("Suggestion ignored and feedback sent");
+    
+    // Remove issue from list
+    removeIssue(issueId);
+    
+  } catch (error) {
+    console.error("Error ignoring suggestion:", error);
+    // Still remove from UI even if feedback fails
+    removeIssue(issueId);
+  }
 }
 
 function learnMore(issueId) {
