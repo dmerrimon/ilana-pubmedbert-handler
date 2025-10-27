@@ -18,6 +18,9 @@
   --feasibility-color: var(--grammarly-yellow);
   --clarity-color: var(--grammarly-blue);
   
+  /* AI Highlight Color */
+  --ai-highlight-color: #FFA500;
+  
   /* Grays */
   --gray-900: #1a1a1a;
   --gray-800: #2d2d2d;
@@ -481,6 +484,29 @@ body {
 .empty-state p {
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* AI Highlight - Global orange highlighting for detected issues */
+.ai-highlight {
+  background-color: var(--ai-highlight-color) !important;
+  color: #000 !important;
+  transition: background-color 0.3s ease;
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+.ai-highlight:hover {
+  background-color: #FF8C00 !important;
+}
+
+.ai-highlight.flash {
+  animation: flashHighlight 1s ease-in-out;
+}
+
+@keyframes flashHighlight {
+  0% { background-color: var(--ai-highlight-color); }
+  50% { background-color: #FFD700; }
+  100% { background-color: var(--ai-highlight-color); }
 }
 
 /* Responsive */
