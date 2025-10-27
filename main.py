@@ -14,6 +14,11 @@ from pydantic import BaseModel
 import requests
 from openai import AzureOpenAI
 from pinecone import Pinecone
+from protocol_intelligence_db import (
+    get_phrase_suggestions, 
+    categorize_reviewer_comment, 
+    assess_feasibility_concerns
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -90,6 +95,41 @@ class AnalysisResponse(BaseModel):
     scores: Dict[str, str]
     amendmentRisk: str
     findings: List[Finding]
+
+# New models for Intelligent Authoring Assistant
+class PhraseRequest(BaseModel):
+    text: str
+    context: str = "general"  # general, dosing, endpoints, etc.
+
+class PhraseSuggestion(BaseModel):
+    original: str
+    suggestions: List[str]
+    rationale: str
+    category: str
+    severity: str
+    position: int
+
+class CommentRequest(BaseModel):
+    comment_text: str
+
+class CommentCategory(BaseModel):
+    category: str
+    confidence: str
+    suggested_actions: List[str]
+
+class FeasibilityRequest(BaseModel):
+    text: str
+
+class FeasibilityConcern(BaseModel):
+    type: str
+    concern: str
+    suggestions: List[str]
+    position: int
+
+class IntelligentSuggestionsResponse(BaseModel):
+    phrase_suggestions: List[PhraseSuggestion]
+    feasibility_concerns: List[FeasibilityConcern]
+    regulatory_flags: List[str]
 
 async def get_azure_openai_embeddings(text: str) -> List[float]:
     """Fallback: Get embeddings from Azure OpenAI"""
@@ -442,6 +482,75 @@ async def submit_feedback(request: FeedbackRequest):
     except Exception as e:
         logger.error(f"Feedback submission failed: {e}")
         raise HTTPException(status_code=500, detail=f"Feedback submission failed: {str(e)}")
+
+# NEW INTELLIGENT AUTHORING ASSISTANT ENDPOINTS
+
+@app.post("/api/intelligent-suggestions", response_model=IntelligentSuggestionsResponse)
+async def get_intelligent_suggestions(request: PhraseRequest):
+    """Real-time intelligent writing suggestions"""
+    try:
+        logger.info(f"Getting intelligent suggestions for text length: {len(request.text)}")
+        
+        # Get phrase suggestions
+        phrase_suggestions = get_phrase_suggestions(request.text, request.context)
+        
+        # Get feasibility concerns
+        feasibility_concerns = assess_feasibility_concerns(request.text)
+        
+        # Basic regulatory flags (can be enhanced with AI later)
+        regulatory_flags = []
+        regulatory_red_flags = ["safe", "guaranteed", "proven", "100%", "no side effects"]
+        text_lower = request.text.lower()
+        
+        for flag in regulatory_red_flags:
+            if flag in text_lower:
+                regulatory_flags.append(f"Avoid absolute claim: '{flag}' - use evidence-based language")
+        
+        return IntelligentSuggestionsResponse(
+            phrase_suggestions=[PhraseSuggestion(**s) for s in phrase_suggestions],
+            feasibility_concerns=[FeasibilityConcern(**c) for c in feasibility_concerns],
+            regulatory_flags=regulatory_flags
+        )
+        
+    except Exception as e:
+        logger.error(f"Intelligent suggestions failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Intelligent suggestions failed: {str(e)}")
+
+@app.post("/api/categorize-comment", response_model=CommentCategory)
+async def categorize_comment(request: CommentRequest):
+    """Categorize reviewer comments and suggest actions"""
+    try:
+        logger.info(f"Categorizing comment: {request.comment_text[:50]}...")
+        
+        result = categorize_reviewer_comment(request.comment_text)
+        
+        return CommentCategory(**result)
+        
+    except Exception as e:
+        logger.error(f"Comment categorization failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Comment categorization failed: {str(e)}")
+
+@app.post("/api/phrase-suggestions")
+async def get_phrase_suggestions_endpoint(request: PhraseRequest):
+    """Get specific phrase improvement suggestions"""
+    try:
+        suggestions = get_phrase_suggestions(request.text, request.context)
+        return {"suggestions": suggestions}
+        
+    except Exception as e:
+        logger.error(f"Phrase suggestions failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Phrase suggestions failed: {str(e)}")
+
+@app.post("/api/feasibility-check")
+async def check_feasibility(request: FeasibilityRequest):
+    """Check operational feasibility concerns"""
+    try:
+        concerns = assess_feasibility_concerns(request.text)
+        return {"concerns": concerns}
+        
+    except Exception as e:
+        logger.error(f"Feasibility check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Feasibility check failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
