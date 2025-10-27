@@ -511,16 +511,78 @@ async function clearHighlights(context) {
 }
 
 function highlightIssueInDocument(issue) {
-  if (!issue.location) return;
+  console.log("🎯 Navigating to issue:", issue.title, "at location:", issue.location);
+  
+  if (!issue.location || !issue.quoted_text) {
+    console.warn("No location or quoted text for issue:", issue.id);
+    return;
+  }
   
   Word.run(async (context) => {
     try {
-      // Navigate to the issue location in document
-      const range = context.document.body.getRange();
-      range.select();
+      const body = context.document.body;
+      context.load(body, "text");
       await context.sync();
+      
+      // Search for the exact quoted text first
+      let searchText = issue.quoted_text.trim();
+      console.log(`🔍 Searching for: "${searchText}"`);
+      
+      const searchResults = body.search(searchText, {
+        matchCase: false,
+        matchWholeWord: false
+      });
+      context.load(searchResults, "items");
+      await context.sync();
+      
+      if (searchResults.items.length > 0) {
+        // Found the text - navigate to it
+        const foundRange = searchResults.items[0];
+        foundRange.select();
+        
+        // Scroll to make it visible
+        foundRange.scrollIntoView();
+        
+        // Flash highlight to show user where it is
+        foundRange.font.highlightColor = "#ffff00"; // Bright yellow
+        
+        setTimeout(() => {
+          Word.run(async (ctx) => {
+            try {
+              foundRange.font.highlightColor = null;
+              await ctx.sync();
+            } catch (e) {
+              console.log("Could not remove flash highlight");
+            }
+          });
+        }, 2000);
+        
+        await context.sync();
+        console.log("✅ Successfully navigated to issue location");
+        
+      } else {
+        // If exact text not found, try to navigate by character position
+        console.warn("Exact text not found, trying position-based navigation");
+        
+        const startPos = Math.max(0, issue.location.start);
+        const endPos = Math.min(body.text.length, startPos + issue.location.length);
+        
+        if (startPos < body.text.length) {
+          const range = body.getRange();
+          const targetRange = range.getRange(Word.RangeLocation.start).expandTo(
+            range.getRange(Word.RangeLocation.start).getRange(Word.RangeLocation.after, startPos)
+          );
+          
+          targetRange.select();
+          targetRange.scrollIntoView();
+          await context.sync();
+          console.log("✅ Navigated to approximate position");
+        }
+      }
+      
     } catch (error) {
-      console.error("Navigation failed:", error);
+      console.error("❌ Navigation failed:", error);
+      alert(`Could not navigate to issue: ${error.message}`);
     }
   });
 }
@@ -645,10 +707,182 @@ async function ignoreSuggestion(issueId) {
 
 function learnMore(issueId) {
   const issue = currentIssues.find(i => i.id === issueId);
+  if (!issue) {
+    console.error("Issue not found:", issueId);
+    return;
+  }
+  
+  console.log("📚 Learn more about:", issue.title);
+  
+  // First, navigate to the issue location in the document
+  highlightIssueInDocument(issue);
+  
+  // Then show detailed information panel
+  showDetailedIssueInfo(issue);
+}
+
+function showDetailedIssueInfo(issue) {
+  // Create a detailed popup with issue information
+  const modal = document.createElement('div');
+  modal.className = 'issue-detail-modal';
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="closeIssueDetail()">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3>${issue.title}</h3>
+          <button class="close-btn" onclick="closeIssueDetail()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="issue-meta">
+            <span class="issue-type-badge ${issue.type}">${issue.type}</span>
+            <span class="issue-severity-badge ${issue.severity}">${issue.severity}</span>
+          </div>
+          
+          <div class="issue-description">
+            <h4>Description</h4>
+            <p>${issue.description}</p>
+          </div>
+          
+          ${issue.quoted_text ? `
+            <div class="issue-quoted">
+              <h4>Problematic Text</h4>
+              <blockquote>"${issue.quoted_text}"</blockquote>
+            </div>
+          ` : ''}
+          
+          ${issue.suggestions && issue.suggestions.length > 0 ? `
+            <div class="issue-suggestions">
+              <h4>Suggested Improvements</h4>
+              <ul>
+                ${issue.suggestions.map(s => `<li>${s}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          
+          <div class="issue-evidence">
+            <h4>Regulatory Evidence</h4>
+            <p>${issue.evidence || issue.citation}</p>
+          </div>
+          
+          <div class="modal-actions">
+            <button class="btn primary" onclick="acceptSuggestion('${issue.id}'); closeIssueDetail();">
+              Accept Suggestion
+            </button>
+            <button class="btn secondary" onclick="ignoreSuggestion('${issue.id}'); closeIssueDetail();">
+              Ignore
+            </button>
+            <button class="btn tertiary" onclick="navigateToIssue('${issue.id}');">
+              Show in Document
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add styles if not already present
+  if (!document.querySelector('#issue-detail-styles')) {
+    const styles = document.createElement('style');
+    styles.id = 'issue-detail-styles';
+    styles.textContent = `
+      .issue-detail-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+      }
+      .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 8px;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+      }
+      .modal-header h3 {
+        margin: 0;
+        color: #333;
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #666;
+      }
+      .modal-body {
+        padding: 20px;
+      }
+      .issue-meta {
+        margin-bottom: 15px;
+      }
+      .issue-type-badge, .issue-severity-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 8px;
+      }
+      .issue-type-badge.compliance { background: #ffebee; color: #c62828; }
+      .issue-type-badge.feasibility { background: #fff8e1; color: #ef6c00; }
+      .issue-type-badge.clarity { background: #e3f2fd; color: #1565c0; }
+      .issue-severity-badge.high { background: #f44336; color: white; }
+      .issue-severity-badge.medium { background: #ff9800; color: white; }
+      .issue-severity-badge.low { background: #4caf50; color: white; }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .btn.primary { background: #2196f3; color: white; }
+      .btn.secondary { background: #757575; color: white; }
+      .btn.tertiary { background: #e0e0e0; color: #333; }
+    `;
+    document.head.appendChild(styles);
+  }
+  
+  document.body.appendChild(modal);
+}
+
+function closeIssueDetail() {
+  const modal = document.querySelector('.issue-detail-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function navigateToIssue(issueId) {
+  const issue = currentIssues.find(i => i.id === issueId);
   if (issue) {
-    // TODO: Open learn more panel or external link
-    console.log("Learn more about:", issue.title);
-    alert(`Learn more about: ${issue.title}\\n\\n${issue.citation}`);
+    highlightIssueInDocument(issue);
   }
 }
 
@@ -787,3 +1021,5 @@ function showError(message) {
 window.acceptSuggestion = acceptSuggestion;
 window.ignoreSuggestion = ignoreSuggestion;
 window.learnMore = learnMore;
+window.closeIssueDetail = closeIssueDetail;
+window.navigateToIssue = navigateToIssue;
