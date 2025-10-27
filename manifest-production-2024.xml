@@ -9,7 +9,7 @@
   <ProviderName>Ilana Labs</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   
-  <DisplayName DefaultValue="Ilana Protocol Intelligence" />
+  <DisplayName DefaultValue="Ilana" />
   <Description DefaultValue="AI-powered clinical protocol compliance analysis - your Grammarly for clinical protocols." />
 
   <IconUrl DefaultValue="https://zealous-dune-00e524d0f.3.azurestaticapps.net/assets/icon-32.png" />

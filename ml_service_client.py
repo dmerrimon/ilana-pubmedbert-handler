@@ -169,8 +169,9 @@ class MLServiceClient:
             return self.embedding_cache[cache_key]
         
         try:
+            # Use correct format for sentence transformer models
             payload = {
-                "inputs": text[:512],
+                "inputs": [text[:512]],  # Must be a list for sentence similarity
                 "options": {"wait_for_model": True}
             }
             
@@ -181,7 +182,14 @@ class MLServiceClient:
                 
                 if response.status == 200:
                     result = await response.json()
-                    embeddings = result if isinstance(result, list) else result.get("embeddings", [])
+                    # Handle different response formats
+                    if isinstance(result, list) and len(result) > 0:
+                        if isinstance(result[0], list):
+                            embeddings = result[0]  # [[embeddings]] format
+                        else:
+                            embeddings = result  # [embeddings] format
+                    else:
+                        embeddings = result.get("embeddings", [])
                     
                     self._cache_embedding(cache_key, embeddings)
                     return embeddings
@@ -328,13 +336,27 @@ class MLServiceClient:
         import hashlib
         text_hash = hashlib.md5(text.encode()).hexdigest()
         
-        # Convert hash to 768-dimensional vector (PubMedBERT size)
+        # Convert hash to exactly 768-dimensional vector (PubMedBERT size)
         embeddings = []
-        for i in range(0, 768, 32):
-            chunk = text_hash[i % 32:(i % 32) + 4]
-            embeddings.extend([int(chunk, 16) / 65535.0 for _ in range(8)])
         
-        logger.info("Using fallback embeddings")
+        # Repeat hash pattern to get 768 dimensions
+        for i in range(768):
+            # Use modulo to cycle through hash characters
+            char_idx = (i * 2) % len(text_hash)
+            hex_pair = text_hash[char_idx:char_idx + 2]
+            if len(hex_pair) < 2:
+                hex_pair = text_hash[:2]
+            
+            # Convert to normalized float
+            value = int(hex_pair, 16) / 255.0
+            embeddings.append(value)
+        
+        # Ensure exactly 768 dimensions
+        embeddings = embeddings[:768]
+        while len(embeddings) < 768:
+            embeddings.extend(embeddings[:768 - len(embeddings)])
+        
+        logger.info(f"Using fallback embeddings: {len(embeddings)} dimensions")
         return embeddings[:768]
     
     def _fallback_similarity(self, text1: str, text2: str) -> float:
