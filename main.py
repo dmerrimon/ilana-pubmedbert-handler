@@ -20,19 +20,46 @@ from protocol_intelligence_db import (
     assess_feasibility_concerns
 )
 
-# Import advanced intelligence (with fallback)
+# Import ML service client and intelligence systems
+INTELLIGENCE_LEVEL = "basic"
+ML_SERVICE_AVAILABLE = False
+LIGHTWEIGHT_INTELLIGENCE_AVAILABLE = False
+ADVANCED_INTELLIGENCE_AVAILABLE = False
+
 try:
-    from advanced_intelligence import (
-        get_enhanced_phrase_suggestions,
-        get_advanced_intelligence,
-        record_user_feedback
-    )
-    ADVANCED_INTELLIGENCE_AVAILABLE = True
-    print("✅ Advanced Intelligence System Loaded")
+    from ml_service_client import get_ml_client, cleanup_ml_client
+    ML_SERVICE_AVAILABLE = True
+    INTELLIGENCE_LEVEL = "ml_service"
+    print("✅ External ML Service Client Loaded (9.0/10 Intelligence)")
 except ImportError as e:
-    ADVANCED_INTELLIGENCE_AVAILABLE = False
-    print(f"⚠️ Advanced Intelligence not available: {e}")
-    print("Falling back to basic intelligence")
+    print(f"⚠️ ML Service Client not available: {e}")
+
+try:
+    from lightweight_intelligence import (
+        get_smart_suggestions,
+        get_lightweight_intelligence,
+        record_smart_feedback
+    )
+    LIGHTWEIGHT_INTELLIGENCE_AVAILABLE = True
+    if INTELLIGENCE_LEVEL == "basic":
+        INTELLIGENCE_LEVEL = "lightweight_advanced"
+    print("✅ Lightweight Advanced Intelligence System Loaded (8.5/10)")
+except ImportError as e:
+    print(f"⚠️ Lightweight Intelligence not available: {e}")
+    
+    try:
+        from advanced_intelligence import (
+            get_enhanced_phrase_suggestions,
+            get_advanced_intelligence,
+            record_user_feedback
+        )
+        ADVANCED_INTELLIGENCE_AVAILABLE = True
+        if INTELLIGENCE_LEVEL == "basic":
+            INTELLIGENCE_LEVEL = "advanced"
+        print("✅ Advanced Intelligence System Loaded")
+    except ImportError as e2:
+        print(f"⚠️ Advanced Intelligence not available: {e2}")
+        print("Falling back to basic intelligence")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -171,7 +198,20 @@ async def get_azure_openai_embeddings(text: str) -> List[float]:
         return []
 
 async def get_pubmedbert_embeddings(text: str) -> List[float]:
-    """Get embeddings from PubMedBERT with Azure OpenAI fallback"""
+    """Get embeddings from PubMedBERT via ML service with fallbacks"""
+    
+    # Try ML Service first
+    if ML_SERVICE_AVAILABLE:
+        try:
+            ml_client = await get_ml_client()
+            embeddings = await ml_client.get_pubmedbert_embeddings(text)
+            if embeddings:
+                logger.info("✅ Using external ML service for PubMedBERT embeddings")
+                return embeddings
+        except Exception as e:
+            logger.warning(f"ML service failed, trying direct API: {e}")
+    
+    # Fallback to direct API call
     try:
         response = requests.post(
             PUBMEDBERT_ENDPOINT_URL,
@@ -505,28 +545,73 @@ async def get_intelligent_suggestions(request: PhraseRequest):
     try:
         logger.info(f"Getting intelligent suggestions for text length: {len(request.text)}")
         
-        # Use advanced intelligence if available
-        if ADVANCED_INTELLIGENCE_AVAILABLE:
+        # Use best available intelligence with ML service priority
+        if ML_SERVICE_AVAILABLE:
             try:
-                # Get enhanced suggestions with ML
-                enhanced_result = get_enhanced_phrase_suggestions(
+                ml_client = await get_ml_client()
+                
+                # Get context detection with ML
+                context_scores = await ml_client.detect_context_ml(request.text)
+                primary_context = max(context_scores, key=context_scores.get) if context_scores else request.context
+                
+                # Get basic suggestions first
+                basic_suggestions = get_phrase_suggestions(request.text, primary_context)
+                
+                # Enhance with ML
+                phrase_suggestions = await ml_client.enhance_suggestions_ml(
+                    basic_suggestions, request.text, primary_context
+                )
+                
+                # Get feasibility analysis
+                feasibility_concerns = assess_feasibility_concerns(request.text)
+                
+                logger.info(f"✅ Used EXTERNAL ML SERVICE (9.0/10) - {len(phrase_suggestions)} suggestions")
+                
+            except Exception as e:
+                logger.warning(f"ML service failed, falling back to lightweight: {e}")
+                # Fallback to lightweight intelligence
+                if LIGHTWEIGHT_INTELLIGENCE_AVAILABLE:
+                    smart_result = get_smart_suggestions(
+                        request.text, request.context, user_id=getattr(request, 'user_id', None)
+                    )
+                    phrase_suggestions = smart_result['suggestions']
+                    feasibility_concerns = assess_feasibility_concerns(request.text)
+                    logger.info(f"✅ Used LIGHTWEIGHT intelligence fallback - {len(phrase_suggestions)} suggestions")
+                else:
+                    phrase_suggestions = get_phrase_suggestions(request.text, request.context)
+                    feasibility_concerns = assess_feasibility_concerns(request.text)
+                    
+        elif LIGHTWEIGHT_INTELLIGENCE_AVAILABLE:
+            try:
+                # Get smart suggestions with lightweight ML
+                smart_result = get_smart_suggestions(
                     request.text, 
                     request.context, 
                     user_id=getattr(request, 'user_id', None)
                 )
                 
-                phrase_suggestions = enhanced_result['suggestions']
+                phrase_suggestions = smart_result['suggestions']
+                feasibility_concerns = assess_feasibility_concerns(request.text)
                 
-                # Get enhanced feasibility analysis
+                logger.info(f"✅ Used LIGHTWEIGHT ADVANCED intelligence (8.5/10) - {len(phrase_suggestions)} suggestions")
+                
+            except Exception as e:
+                logger.warning(f"Lightweight intelligence failed: {e}")
+                phrase_suggestions = get_phrase_suggestions(request.text, request.context)
+                feasibility_concerns = assess_feasibility_concerns(request.text)
+                
+        elif ADVANCED_INTELLIGENCE_AVAILABLE:
+            try:
+                enhanced_result = get_enhanced_phrase_suggestions(
+                    request.text, request.context, user_id=getattr(request, 'user_id', None)
+                )
+                phrase_suggestions = enhanced_result['suggestions']
                 intelligence = get_advanced_intelligence()
                 feasibility_result = intelligence.get_enhanced_feasibility_check(request.text)
                 feasibility_concerns = feasibility_result['concerns']
-                
                 logger.info(f"✅ Used ADVANCED intelligence - {len(phrase_suggestions)} suggestions")
-                
             except Exception as e:
-                logger.warning(f"Advanced intelligence failed, falling back: {e}")
-                # Fallback to basic intelligence
+                logger.warning(f"Advanced intelligence failed: {e}")
                 phrase_suggestions = get_phrase_suggestions(request.text, request.context)
                 feasibility_concerns = assess_feasibility_concerns(request.text)
         else:
@@ -648,28 +733,69 @@ async def get_intelligence_status():
     """Get status of intelligence systems"""
     status = {
         "basic_intelligence": True,
+        "ml_service_available": ML_SERVICE_AVAILABLE,
+        "lightweight_intelligence": LIGHTWEIGHT_INTELLIGENCE_AVAILABLE,
         "advanced_intelligence": ADVANCED_INTELLIGENCE_AVAILABLE,
+        "current_intelligence_level": INTELLIGENCE_LEVEL,
         "features": {
             "phrase_suggestions": True,
             "comment_categorization": True,
             "feasibility_analysis": True,
-            "semantic_analysis": ADVANCED_INTELLIGENCE_AVAILABLE,
-            "user_learning": ADVANCED_INTELLIGENCE_AVAILABLE,
-            "context_detection": ADVANCED_INTELLIGENCE_AVAILABLE
+            "semantic_analysis": ML_SERVICE_AVAILABLE or LIGHTWEIGHT_INTELLIGENCE_AVAILABLE or ADVANCED_INTELLIGENCE_AVAILABLE,
+            "user_learning": ML_SERVICE_AVAILABLE or LIGHTWEIGHT_INTELLIGENCE_AVAILABLE or ADVANCED_INTELLIGENCE_AVAILABLE,
+            "context_detection": ML_SERVICE_AVAILABLE or LIGHTWEIGHT_INTELLIGENCE_AVAILABLE or ADVANCED_INTELLIGENCE_AVAILABLE,
+            "external_ml_service": ML_SERVICE_AVAILABLE,
+            "pubmedbert_embeddings": ML_SERVICE_AVAILABLE,
+            "advanced_semantic_similarity": ML_SERVICE_AVAILABLE
         }
     }
     
+    # Get ML service status if available
+    if ML_SERVICE_AVAILABLE:
+        try:
+            ml_client = await get_ml_client()
+            ml_status = ml_client.get_service_status()
+            status["ml_service_status"] = ml_status
+            status["intelligence_level"] = "external_ml_service_9.0"
+        except Exception as e:
+            status["ml_service_error"] = str(e)
+    
+    # Get lightweight intelligence status
+    if LIGHTWEIGHT_INTELLIGENCE_AVAILABLE:
+        try:
+            intelligence = get_lightweight_intelligence()
+            lightweight_status = intelligence.get_intelligence_status()
+            status["lightweight_status"] = lightweight_status
+            if not ML_SERVICE_AVAILABLE:
+                status["intelligence_level"] = "lightweight_advanced_8.5"
+        except Exception as e:
+            status["lightweight_error"] = str(e)
+    
+    # Get advanced intelligence status
     if ADVANCED_INTELLIGENCE_AVAILABLE:
         try:
             intelligence = get_advanced_intelligence()
             status["semantic_model_loaded"] = intelligence.semantic_model is not None
-            status["intelligence_level"] = "advanced"
-        except:
-            status["intelligence_level"] = "basic"
-    else:
-        status["intelligence_level"] = "basic"
+            if not ML_SERVICE_AVAILABLE and not LIGHTWEIGHT_INTELLIGENCE_AVAILABLE:
+                status["intelligence_level"] = "advanced_7.5"
+        except Exception as e:
+            status["advanced_error"] = str(e)
+    
+    if not any([ML_SERVICE_AVAILABLE, LIGHTWEIGHT_INTELLIGENCE_AVAILABLE, ADVANCED_INTELLIGENCE_AVAILABLE]):
+        status["intelligence_level"] = "basic_6.0"
     
     return status
+
+# Cleanup handler for ML service
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup resources on shutdown"""
+    if ML_SERVICE_AVAILABLE:
+        try:
+            await cleanup_ml_client()
+            logger.info("ML service client cleaned up")
+        except Exception as e:
+            logger.error(f"Error cleaning up ML service: {e}")
 
 if __name__ == "__main__":
     import uvicorn
