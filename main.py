@@ -91,8 +91,33 @@ class AnalysisResponse(BaseModel):
     amendmentRisk: str
     findings: List[Finding]
 
+async def get_azure_openai_embeddings(text: str) -> List[float]:
+    """Fallback: Get embeddings from Azure OpenAI"""
+    try:
+        if not azure_client:
+            return []
+            
+        response = azure_client.embeddings.create(
+            model="text-embedding-ada-002",  # Standard Azure OpenAI embedding model
+            input=text[:8000]  # Azure OpenAI has higher token limit
+        )
+        
+        if response.data and len(response.data) > 0:
+            embedding = response.data[0].embedding
+            # Pad or truncate to 768 dimensions to match Pinecone index
+            if len(embedding) > 768:
+                return embedding[:768]
+            elif len(embedding) < 768:
+                return embedding + [0.0] * (768 - len(embedding))
+            return embedding
+        return []
+        
+    except Exception as e:
+        logger.error(f"Azure OpenAI embedding failed: {e}")
+        return []
+
 async def get_pubmedbert_embeddings(text: str) -> List[float]:
-    """Get embeddings from PubMedBERT"""
+    """Get embeddings from PubMedBERT with Azure OpenAI fallback"""
     try:
         response = requests.post(
             PUBMEDBERT_ENDPOINT_URL,
@@ -119,7 +144,8 @@ async def get_pubmedbert_embeddings(text: str) -> List[float]:
             
     except Exception as e:
         logger.error(f"PubMedBERT embedding failed: {e}")
-        return []
+        logger.info("Falling back to Azure OpenAI embeddings...")
+        return await get_azure_openai_embeddings(text)
 
 async def query_pinecone(embeddings: List[float]) -> Dict:
     """Query Pinecone for similar protocols"""
