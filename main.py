@@ -207,7 +207,7 @@ Respond in this exact JSON format:
   "amendmentRisk": "low|medium|high",
   "findings": [
     {{
-      "id": "finding-{random_id}",
+      "id": "finding-001",
       "type": "compliance|feasibility|clarity",
       "severity": "high|medium|low",
       "title": "Issue Title",
