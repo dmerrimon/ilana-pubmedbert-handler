@@ -267,6 +267,17 @@ Respond in this exact JSON format:
         
         # Parse and validate the response
         try:
+            # Clean up the content first
+            content = content.strip()
+            if not content:
+                raise ValueError("Empty response from Azure OpenAI")
+            
+            # Remove any markdown code blocks if present
+            if content.startswith("```json"):
+                content = content.replace("```json", "").replace("```", "").strip()
+            elif content.startswith("```"):
+                content = content.replace("```", "").strip()
+            
             result = json.loads(content)
             
             # Validate and clean up findings
@@ -295,9 +306,32 @@ Respond in this exact JSON format:
             result['findings'] = validated_findings
             return result
             
-        except json.JSONDecodeError:
-            logger.error(f"Failed to parse OpenAI response: {content}")
-            raise
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse OpenAI response as JSON: {e}")
+            logger.error(f"Raw content: {content[:500]}...")
+            # Return a structured error response instead of crashing
+            return {
+                "scores": {
+                    "clarity": "C",
+                    "regulatory": "C", 
+                    "feasibility": "C"
+                },
+                "amendmentRisk": "medium",
+                "findings": [
+                    {
+                        "id": "json-parse-error",
+                        "type": "compliance",
+                        "severity": "medium",
+                        "title": "Analysis Response Format Error",
+                        "description": f"The AI analysis returned an incorrectly formatted response. This may be due to complex protocol content. Please retry with a shorter text or contact support.",
+                        "citation": "Technical issue with response parsing",
+                        "location": {"start": 0, "length": 10},
+                        "suggestions": ["Try analyzing a shorter section of the protocol", "Contact support if issue persists"],
+                        "quoted_text": "",
+                        "evidence": f"JSON parsing failed: {str(e)}"
+                    }
+                ]
+            }
         
     except Exception as e:
         logger.error(f"Azure OpenAI analysis failed: {e}")
