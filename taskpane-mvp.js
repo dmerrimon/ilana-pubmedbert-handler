@@ -195,30 +195,81 @@ async function getDocumentContent() {
 }
 
 async function analyzeProtocol(text) {
-  console.log("Analyzing protocol text:", text.substring(0, 100) + "...");
+  console.log("Analyzing protocol text with sophisticated AI:", text.substring(0, 100) + "...");
   
   try {
-    console.log("Trying backend API...");
+    console.log("Using sophisticated analysis endpoints...");
     
-    // Call your backend API which handles all AI services securely
-    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-protocol`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text: text.substring(0, 5000) // Limit text size
+    // Call basic analysis first
+    const [basicAnalysis, sophisticatedGuidance] = await Promise.all([
+      // Basic protocol analysis
+      fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-protocol`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.substring(0, 5000) })
+      }),
+      
+      // Sophisticated authoring guidance
+      fetch(`${CONFIG.API_BACKEND_URL}/api/sophisticated-authoring`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text: text.substring(0, 3000),
+          context: "protocol" 
+        })
       })
-    });
+    ]);
     
-    if (!response.ok) {
-      throw new Error(`Backend API failed: ${response.status}`);
+    if (!basicAnalysis.ok) {
+      throw new Error(`Basic analysis failed: ${basicAnalysis.status}`);
     }
     
-    const aiAnalysis = await response.json();
-    console.log("Backend API success:", aiAnalysis);
+    const basicResult = await basicAnalysis.json();
+    console.log("✅ Basic analysis success:", basicResult);
     
-    return aiAnalysis;
+    // Get sophisticated guidance if available
+    let sophisticatedFindings = [];
+    if (sophisticatedGuidance.ok) {
+      try {
+        const sophisticatedResult = await sophisticatedGuidance.json();
+        console.log("✅ Sophisticated guidance success:", sophisticatedResult);
+        
+        // Convert sophisticated guidance to findings format
+        sophisticatedFindings = sophisticatedResult.map(guidance => ({
+          id: guidance.suggestion_id,
+          type: guidance.type,
+          severity: guidance.severity,
+          title: guidance.title,
+          description: guidance.description,
+          citation: guidance.evidence,
+          location: { 
+            start: guidance.text_span[0], 
+            length: guidance.text_span[1] - guidance.text_span[0] 
+          },
+          suggestions: guidance.suggestions,
+          quoted_text: guidance.original,
+          evidence: `${guidance.rationale} (Confidence: ${(guidance.confidence * 100).toFixed(0)}%)`
+        }));
+        
+        console.log(`✅ Converted ${sophisticatedFindings.length} sophisticated findings`);
+      } catch (e) {
+        console.warn("Sophisticated guidance parsing failed:", e);
+      }
+    } else {
+      console.warn("Sophisticated guidance not available:", sophisticatedGuidance.status);
+    }
+    
+    // Combine basic findings with sophisticated findings
+    const allFindings = [...basicResult.findings, ...sophisticatedFindings];
+    
+    const enhancedResult = {
+      ...basicResult,
+      findings: allFindings,
+      intelligence_level: sophisticatedFindings.length > 0 ? "sophisticated_9.5" : basicResult.intelligence_level || "basic"
+    };
+    
+    console.log(`✅ Enhanced analysis complete: ${allFindings.length} total findings (${sophisticatedFindings.length} sophisticated)`);
+    return enhancedResult;
   } catch (error) {
     console.error("Backend API failed:", error.message);
     
@@ -475,26 +526,83 @@ function highlightIssueInDocument(issue) {
 }
 
 function filterIssues(filterType) {
+  console.log(`Filter clicked: ${filterType}, currentIssues:`, currentIssues);
+  
   // Update filter button states
   document.querySelectorAll(".filter-btn").forEach(btn => {
     btn.classList.remove("active");
   });
-  document.querySelector(`[data-filter="${filterType}"]`).classList.add("active");
+  
+  const filterButton = document.querySelector(`[data-filter="${filterType}"]`);
+  if (filterButton) {
+    filterButton.classList.add("active");
+  }
   
   // Make sure currentIssues exists and has data
   if (!currentIssues || currentIssues.length === 0) {
     console.log("No current issues to filter");
+    const issuesList = document.getElementById("issues-list");
+    if (issuesList) {
+      issuesList.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <h4>No Issues to Filter</h4>
+          <p>Run a scan first to find protocol issues.</p>
+        </div>
+      `;
+    }
     return;
   }
   
-  // Filter issues
+  // Filter issues based on type
   let filteredIssues = currentIssues;
   if (filterType !== "all") {
-    filteredIssues = currentIssues.filter(issue => issue.type === filterType);
+    filteredIssues = currentIssues.filter(issue => {
+      console.log(`Checking issue type: ${issue.type} against filter: ${filterType}`);
+      return issue.type === filterType;
+    });
   }
   
-  console.log(`Filtering by ${filterType}: ${filteredIssues.length} issues found`);
-  displayIssues(filteredIssues);
+  console.log(`Filtering by ${filterType}: ${filteredIssues.length} of ${currentIssues.length} issues shown`);
+  
+  // Update the display
+  displayFilteredIssues(filteredIssues, filterType);
+}
+
+function displayFilteredIssues(issues, filterType) {
+  const issuesList = document.getElementById("issues-list");
+  const issueCount = document.getElementById("issue-count");
+  
+  // Update count to show filtered vs total
+  if (filterType === "all") {
+    issueCount.textContent = issues.length;
+  } else {
+    issueCount.textContent = `${issues.length} of ${currentIssues.length}`;
+  }
+  
+  // Clear existing issues
+  issuesList.innerHTML = "";
+  
+  if (issues.length === 0) {
+    const filterMessage = filterType === "all" 
+      ? "No issues found in this document." 
+      : `No ${filterType} issues found.`;
+      
+    issuesList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h4>No Issues</h4>
+        <p>${filterMessage}</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Display filtered issues
+  issues.forEach(issue => {
+    const issueElement = createIssueElement(issue);
+    issuesList.appendChild(issueElement);
+  });
 }
 
 async function acceptSuggestion(issueId) {
@@ -585,11 +693,75 @@ function toggleRealTime() {
 function startRealTimeMonitoring() {
   if (!realTimeEnabled) return;
   
-  // TODO: Set up document change listeners
-  console.log("Real-time monitoring started");
+  console.log("✅ Real-time sophisticated monitoring started");
   
-  // Mock implementation - in real version, listen to document changes
-  // and call scanDocument() after typing stops
+  // Set up actual document change listeners for real-time guidance
+  try {
+    Word.run(async (context) => {
+      // Monitor document changes
+      context.document.onSelectionChanged.add(async () => {
+        if (typingTimer) clearTimeout(typingTimer);
+        
+        typingTimer = setTimeout(async () => {
+          try {
+            console.log("📝 Document changed - getting real-time guidance");
+            await getRealtimeGuidance();
+          } catch (error) {
+            console.error("Real-time guidance failed:", error);
+          }
+        }, CONFIG.REAL_TIME_DELAY);
+      });
+      
+      await context.sync();
+      console.log("✅ Document change listeners active");
+    });
+  } catch (error) {
+    console.warn("Could not set up real-time monitoring:", error);
+  }
+}
+
+async function getRealtimeGuidance() {
+  try {
+    // Get current selection or recent text
+    const currentText = await getDocumentContent();
+    
+    if (currentText.length < 50) return; // Skip very short text
+    
+    // Get sophisticated authoring guidance for current context
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/sophisticated-authoring`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        text: currentText.substring(0, 1000), // Smaller chunk for real-time
+        context: "protocol" 
+      })
+    });
+    
+    if (response.ok) {
+      const guidance = await response.json();
+      if (guidance.length > 0) {
+        // Show real-time suggestions
+        showRealtimeGuidance(guidance);
+        console.log(`📋 Real-time: ${guidance.length} sophisticated suggestions`);
+      }
+    }
+  } catch (error) {
+    console.error("Real-time guidance error:", error);
+  }
+}
+
+function showRealtimeGuidance(guidance) {
+  // Update the status bar to show real-time guidance count
+  const statusText = document.querySelector(".status-text");
+  if (statusText && guidance.length > 0) {
+    statusText.textContent = `${guidance.length} live suggestions`;
+    
+    // Flash the status to indicate new guidance
+    statusText.style.color = "#4CAF50";
+    setTimeout(() => {
+      statusText.style.color = "";
+    }, 1000);
+  }
 }
 
 function stopRealTimeMonitoring() {
