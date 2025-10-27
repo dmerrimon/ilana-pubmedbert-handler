@@ -78,6 +78,9 @@ function initializeApp() {
     // Set up event listeners
     setupEventListeners();
     
+    // Add collaborative features to UI
+    addCollaborativeFeatures();
+    
     // Start real-time monitoring
     if (realTimeEnabled) {
       startRealTimeMonitoring();
@@ -195,13 +198,13 @@ async function getDocumentContent() {
 }
 
 async function analyzeProtocol(text) {
-  console.log("Analyzing protocol text with sophisticated AI:", text.substring(0, 100) + "...");
+  console.log("Analyzing protocol text with ALL sophisticated AI features:", text.substring(0, 100) + "...");
   
   try {
-    console.log("Using sophisticated analysis endpoints...");
+    console.log("🚀 Using ALL sophisticated analysis endpoints...");
     
-    // Call basic analysis first
-    const [basicAnalysis, sophisticatedGuidance] = await Promise.all([
+    // Call ALL available sophisticated endpoints
+    const [basicAnalysis, sophisticatedGuidance, intelligenceStatus] = await Promise.all([
       // Basic protocol analysis
       fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-protocol`, {
         method: 'POST',
@@ -209,7 +212,7 @@ async function analyzeProtocol(text) {
         body: JSON.stringify({ text: text.substring(0, 5000) })
       }),
       
-      // Sophisticated authoring guidance
+      // Sophisticated authoring guidance (9.5/10 intelligence)
       fetch(`${CONFIG.API_BACKEND_URL}/api/sophisticated-authoring`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -217,6 +220,12 @@ async function analyzeProtocol(text) {
           text: text.substring(0, 3000),
           context: "protocol" 
         })
+      }),
+      
+      // Get current intelligence status
+      fetch(`${CONFIG.API_BACKEND_URL}/api/intelligence-status`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
       })
     ]);
     
@@ -226,6 +235,21 @@ async function analyzeProtocol(text) {
     
     const basicResult = await basicAnalysis.json();
     console.log("✅ Basic analysis success:", basicResult);
+    
+    // Get intelligence status
+    let currentIntelligence = "basic";
+    if (intelligenceStatus.ok) {
+      try {
+        const statusResult = await intelligenceStatus.json();
+        currentIntelligence = statusResult.intelligence_level || statusResult.current_intelligence_level;
+        console.log("✅ Intelligence status:", currentIntelligence);
+        
+        // Show intelligence level in UI
+        updateIntelligenceStatus(statusResult);
+      } catch (e) {
+        console.warn("Could not get intelligence status:", e);
+      }
+    }
     
     // Get sophisticated guidance if available
     let sophisticatedFindings = [];
@@ -886,6 +910,248 @@ function navigateToIssue(issueId) {
   }
 }
 
+function updateIntelligenceStatus(statusResult) {
+  // Add intelligence level indicator to the UI
+  const statusIndicator = document.getElementById("status-indicator");
+  const statusText = statusIndicator.querySelector(".status-text");
+  
+  if (statusResult && statusResult.intelligence_level) {
+    const intelligenceLevel = statusResult.intelligence_level;
+    let displayText = "Basic analysis";
+    let color = "#666";
+    
+    if (intelligenceLevel.includes("9.5")) {
+      displayText = "🧠 Sophisticated AI (9.5/10)";
+      color = "#4CAF50";
+    } else if (intelligenceLevel.includes("8.5")) {
+      displayText = "🤖 Advanced AI (8.5/10)";
+      color = "#2196F3";
+    } else if (intelligenceLevel.includes("7.5")) {
+      displayText = "🔧 Enhanced AI (7.5/10)";
+      color = "#FF9800";
+    }
+    
+    // Update the status text to show intelligence level
+    if (!realTimeEnabled) {
+      statusText.textContent = displayText;
+      statusText.style.color = color;
+    }
+    
+    console.log(`🧠 Intelligence level displayed: ${displayText}`);
+  }
+}
+
+// New function: Analyze document changes (collaborative review)
+async function analyzeDocumentChanges(originalText, revisedText, context = "general") {
+  try {
+    console.log("🔄 Analyzing document changes with collaborative review AI...");
+    
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-change`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        original_text: originalText,
+        revised_text: revisedText,
+        section_context: context
+      })
+    });
+    
+    if (response.ok) {
+      const changeAnalysis = await response.json();
+      console.log("✅ Change analysis success:", changeAnalysis);
+      return changeAnalysis;
+    } else {
+      console.warn("Change analysis not available:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Change analysis failed:", error);
+    return null;
+  }
+}
+
+// New function: Analyze reviewer comments (collaborative review)
+async function analyzeReviewerComment(commentText, context = "") {
+  try {
+    console.log("💬 Analyzing reviewer comment with collaborative AI...");
+    
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/analyze-reviewer-comment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comment_text: commentText,
+        context: context
+      })
+    });
+    
+    if (response.ok) {
+      const commentAnalysis = await response.json();
+      console.log("✅ Comment analysis success:", commentAnalysis);
+      return commentAnalysis;
+    } else {
+      console.warn("Comment analysis not available:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Comment analysis failed:", error);
+    return null;
+  }
+}
+
+// Add collaborative features button to UI
+function addCollaborativeFeatures() {
+  const quickActions = document.querySelector(".quick-actions");
+  if (quickActions && !document.getElementById("collaborative-btn")) {
+    const collaborativeBtn = document.createElement("button");
+    collaborativeBtn.id = "collaborative-btn";
+    collaborativeBtn.className = "action-btn tertiary";
+    collaborativeBtn.innerHTML = `
+      <span class="btn-icon">👥</span>
+      Collaborative Review
+    `;
+    collaborativeBtn.onclick = showCollaborativePanel;
+    quickActions.appendChild(collaborativeBtn);
+  }
+}
+
+function showCollaborativePanel() {
+  // Create collaborative review panel
+  const panel = document.createElement('div');
+  panel.className = 'collaborative-panel-modal';
+  panel.innerHTML = `
+    <div class="modal-overlay" onclick="closeCollaborativePanel()">
+      <div class="modal-content collaborative-panel" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3>👥 Collaborative Review & Version Intelligence</h3>
+          <button class="close-btn" onclick="closeCollaborativePanel()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="feature-section">
+            <h4>📝 Document Change Analysis</h4>
+            <p>Analyze changes between protocol versions with stakeholder impact assessment.</p>
+            <button class="btn primary" onclick="analyzeChanges()">Analyze Changes</button>
+          </div>
+          
+          <div class="feature-section">
+            <h4>💬 Reviewer Comment Intelligence</h4>
+            <p>Automatically categorize and prioritize reviewer comments by expertise type.</p>
+            <textarea id="reviewer-comment-input" placeholder="Paste reviewer comment here..." rows="3"></textarea>
+            <button class="btn primary" onclick="analyzeComment()">Analyze Comment</button>
+          </div>
+          
+          <div class="feature-section">
+            <h4>🎯 Intelligence Status</h4>
+            <div id="intelligence-display"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(panel);
+  updateCollaborativeIntelligenceDisplay();
+}
+
+function closeCollaborativePanel() {
+  const panel = document.querySelector('.collaborative-panel-modal');
+  if (panel) {
+    panel.remove();
+  }
+}
+
+async function analyzeChanges() {
+  // For demo, use current document vs a mock "previous version"
+  try {
+    const currentText = await getDocumentContent();
+    const mockPreviousText = currentText.substring(0, Math.floor(currentText.length * 0.8)) + " [Previous version text]";
+    
+    const changeAnalysis = await analyzeDocumentChanges(mockPreviousText, currentText, "protocol_revision");
+    
+    if (changeAnalysis) {
+      alert(`Change Analysis Results:
+      
+Change Type: ${changeAnalysis.change_type}
+Impact Level: ${changeAnalysis.impact_level}
+Affects Compliance: ${changeAnalysis.affects_compliance}
+Reviewer Category: ${changeAnalysis.reviewer_category}
+Approval Complexity: ${changeAnalysis.approval_complexity}
+Intelligence Level: ${changeAnalysis.intelligence_level}
+
+Suggested Response: ${changeAnalysis.suggested_response}`);
+    }
+  } catch (error) {
+    console.error("Change analysis demo failed:", error);
+    alert("Could not analyze changes. Check console for details.");
+  }
+}
+
+async function analyzeComment() {
+  const commentInput = document.getElementById("reviewer-comment-input");
+  const commentText = commentInput.value.trim();
+  
+  if (!commentText) {
+    alert("Please enter a reviewer comment to analyze.");
+    return;
+  }
+  
+  const commentAnalysis = await analyzeReviewerComment(commentText, "protocol_review");
+  
+  if (commentAnalysis) {
+    alert(`Comment Analysis Results:
+    
+Reviewer Type: ${commentAnalysis.reviewer_type}
+Comment Category: ${commentAnalysis.comment_category}
+Priority Level: ${commentAnalysis.priority_level}
+Requires SME Input: ${commentAnalysis.requires_sme_input}
+Regulatory Impact: ${commentAnalysis.regulatory_impact}
+Timeline Impact: ${commentAnalysis.timeline_impact}
+Intelligence Level: ${commentAnalysis.intelligence_level}
+Confidence: ${(commentAnalysis.expertise_confidence * 100).toFixed(0)}%
+
+Suggested Resolution: ${commentAnalysis.suggested_resolution}`);
+    
+    commentInput.value = "";
+  }
+}
+
+async function updateCollaborativeIntelligenceDisplay() {
+  try {
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/intelligence-status`);
+    if (response.ok) {
+      const status = await response.json();
+      const display = document.getElementById("intelligence-display");
+      if (display) {
+        display.innerHTML = `
+          <div class="intelligence-info">
+            <div class="intelligence-level">
+              Current Level: <strong>${status.intelligence_level || status.current_intelligence_level}</strong>
+            </div>
+            <div class="feature-list">
+              <div class="feature-item ${status.features.sophisticated_authoring ? 'active' : 'inactive'}">
+                ✅ Sophisticated Authoring
+              </div>
+              <div class="feature-item ${status.features.collaborative_review ? 'active' : 'inactive'}">
+                ✅ Collaborative Review
+              </div>
+              <div class="feature-item ${status.features.clinical_intelligence ? 'active' : 'inactive'}">
+                ✅ Clinical Intelligence
+              </div>
+              <div class="feature-item ${status.features.change_intelligence ? 'active' : 'inactive'}">
+                ✅ Change Intelligence
+              </div>
+              <div class="feature-item ${status.features.reviewer_intelligence ? 'active' : 'inactive'}">
+                ✅ Reviewer Intelligence
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+  } catch (error) {
+    console.error("Could not get intelligence status:", error);
+  }
+}
+
 function removeIssue(issueId) {
   currentIssues = currentIssues.filter(issue => issue.id !== issueId);
   displayIssues(currentIssues);
@@ -1023,3 +1289,7 @@ window.ignoreSuggestion = ignoreSuggestion;
 window.learnMore = learnMore;
 window.closeIssueDetail = closeIssueDetail;
 window.navigateToIssue = navigateToIssue;
+window.showCollaborativePanel = showCollaborativePanel;
+window.closeCollaborativePanel = closeCollaborativePanel;
+window.analyzeChanges = analyzeChanges;
+window.analyzeComment = analyzeComment;
