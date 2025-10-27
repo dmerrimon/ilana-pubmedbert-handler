@@ -20,6 +20,20 @@ from protocol_intelligence_db import (
     assess_feasibility_concerns
 )
 
+# Import advanced intelligence (with fallback)
+try:
+    from advanced_intelligence import (
+        get_enhanced_phrase_suggestions,
+        get_advanced_intelligence,
+        record_user_feedback
+    )
+    ADVANCED_INTELLIGENCE_AVAILABLE = True
+    print("✅ Advanced Intelligence System Loaded")
+except ImportError as e:
+    ADVANCED_INTELLIGENCE_AVAILABLE = False
+    print(f"⚠️ Advanced Intelligence not available: {e}")
+    print("Falling back to basic intelligence")
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -487,24 +501,48 @@ async def submit_feedback(request: FeedbackRequest):
 
 @app.post("/api/intelligent-suggestions", response_model=IntelligentSuggestionsResponse)
 async def get_intelligent_suggestions(request: PhraseRequest):
-    """Real-time intelligent writing suggestions"""
+    """Real-time intelligent writing suggestions with ML enhancement"""
     try:
         logger.info(f"Getting intelligent suggestions for text length: {len(request.text)}")
         
-        # Get phrase suggestions
-        phrase_suggestions = get_phrase_suggestions(request.text, request.context)
+        # Use advanced intelligence if available
+        if ADVANCED_INTELLIGENCE_AVAILABLE:
+            try:
+                # Get enhanced suggestions with ML
+                enhanced_result = get_enhanced_phrase_suggestions(
+                    request.text, 
+                    request.context, 
+                    user_id=getattr(request, 'user_id', None)
+                )
+                
+                phrase_suggestions = enhanced_result['suggestions']
+                
+                # Get enhanced feasibility analysis
+                intelligence = get_advanced_intelligence()
+                feasibility_result = intelligence.get_enhanced_feasibility_check(request.text)
+                feasibility_concerns = feasibility_result['concerns']
+                
+                logger.info(f"✅ Used ADVANCED intelligence - {len(phrase_suggestions)} suggestions")
+                
+            except Exception as e:
+                logger.warning(f"Advanced intelligence failed, falling back: {e}")
+                # Fallback to basic intelligence
+                phrase_suggestions = get_phrase_suggestions(request.text, request.context)
+                feasibility_concerns = assess_feasibility_concerns(request.text)
+        else:
+            # Use basic intelligence
+            phrase_suggestions = get_phrase_suggestions(request.text, request.context)
+            feasibility_concerns = assess_feasibility_concerns(request.text)
+            logger.info(f"Used basic intelligence - {len(phrase_suggestions)} suggestions")
         
-        # Get feasibility concerns
-        feasibility_concerns = assess_feasibility_concerns(request.text)
-        
-        # Basic regulatory flags (can be enhanced with AI later)
+        # Enhanced regulatory flags
         regulatory_flags = []
         regulatory_red_flags = ["safe", "guaranteed", "proven", "100%", "no side effects"]
         text_lower = request.text.lower()
         
         for flag in regulatory_red_flags:
             if flag in text_lower:
-                regulatory_flags.append(f"Avoid absolute claim: '{flag}' - use evidence-based language")
+                regulatory_flags.append(f"🚩 Avoid absolute claim: '{flag}' - use evidence-based language")
         
         return IntelligentSuggestionsResponse(
             phrase_suggestions=[PhraseSuggestion(**s) for s in phrase_suggestions],
@@ -518,11 +556,21 @@ async def get_intelligent_suggestions(request: PhraseRequest):
 
 @app.post("/api/categorize-comment", response_model=CommentCategory)
 async def categorize_comment(request: CommentRequest):
-    """Categorize reviewer comments and suggest actions"""
+    """Categorize reviewer comments with enhanced intelligence"""
     try:
         logger.info(f"Categorizing comment: {request.comment_text[:50]}...")
         
-        result = categorize_reviewer_comment(request.comment_text)
+        # Use advanced intelligence if available
+        if ADVANCED_INTELLIGENCE_AVAILABLE:
+            try:
+                intelligence = get_advanced_intelligence()
+                result = intelligence.get_enhanced_comment_categorization(request.comment_text)
+                logger.info("✅ Used ADVANCED comment categorization")
+            except Exception as e:
+                logger.warning(f"Advanced categorization failed, falling back: {e}")
+                result = categorize_reviewer_comment(request.comment_text)
+        else:
+            result = categorize_reviewer_comment(request.comment_text)
         
         return CommentCategory(**result)
         
@@ -543,14 +591,85 @@ async def get_phrase_suggestions_endpoint(request: PhraseRequest):
 
 @app.post("/api/feasibility-check")
 async def check_feasibility(request: FeasibilityRequest):
-    """Check operational feasibility concerns"""
+    """Check operational feasibility concerns with enhanced analysis"""
     try:
+        # Use advanced intelligence if available
+        if ADVANCED_INTELLIGENCE_AVAILABLE:
+            try:
+                intelligence = get_advanced_intelligence()
+                result = intelligence.get_enhanced_feasibility_check(request.text)
+                logger.info("✅ Used ADVANCED feasibility analysis")
+                return result
+            except Exception as e:
+                logger.warning(f"Advanced feasibility failed, falling back: {e}")
+        
+        # Fallback to basic
         concerns = assess_feasibility_concerns(request.text)
-        return {"concerns": concerns}
+        return {"concerns": concerns, "enhanced": False}
         
     except Exception as e:
         logger.error(f"Feasibility check failed: {e}")
         raise HTTPException(status_code=500, detail=f"Feasibility check failed: {str(e)}")
+
+# NEW: User Learning Endpoint
+class UserFeedbackRequest(BaseModel):
+    user_id: str
+    action_type: str  # 'accept', 'reject', 'modify'
+    original_text: str
+    suggested_text: str
+    final_text: str = ""
+    context: str = "general"
+    confidence: float = 0.7
+
+@app.post("/api/user-feedback")
+async def submit_user_feedback(request: UserFeedbackRequest):
+    """Record user feedback for adaptive learning"""
+    try:
+        if ADVANCED_INTELLIGENCE_AVAILABLE:
+            record_user_feedback(
+                user_id=request.user_id,
+                action_type=request.action_type,
+                original=request.original_text,
+                suggestion=request.suggested_text,
+                context=request.context,
+                confidence=request.confidence
+            )
+            logger.info(f"✅ Recorded user feedback: {request.action_type} for user {request.user_id}")
+            return {"status": "success", "message": "Feedback recorded for learning", "learning_enabled": True}
+        else:
+            return {"status": "success", "message": "Feedback received but learning not available", "learning_enabled": False}
+        
+    except Exception as e:
+        logger.error(f"User feedback failed: {e}")
+        raise HTTPException(status_code=500, detail=f"User feedback failed: {str(e)}")
+
+@app.get("/api/intelligence-status")
+async def get_intelligence_status():
+    """Get status of intelligence systems"""
+    status = {
+        "basic_intelligence": True,
+        "advanced_intelligence": ADVANCED_INTELLIGENCE_AVAILABLE,
+        "features": {
+            "phrase_suggestions": True,
+            "comment_categorization": True,
+            "feasibility_analysis": True,
+            "semantic_analysis": ADVANCED_INTELLIGENCE_AVAILABLE,
+            "user_learning": ADVANCED_INTELLIGENCE_AVAILABLE,
+            "context_detection": ADVANCED_INTELLIGENCE_AVAILABLE
+        }
+    }
+    
+    if ADVANCED_INTELLIGENCE_AVAILABLE:
+        try:
+            intelligence = get_advanced_intelligence()
+            status["semantic_model_loaded"] = intelligence.semantic_model is not None
+            status["intelligence_level"] = "advanced"
+        except:
+            status["intelligence_level"] = "basic"
+    else:
+        status["intelligence_level"] = "basic"
+    
+    return status
 
 if __name__ == "__main__":
     import uvicorn
