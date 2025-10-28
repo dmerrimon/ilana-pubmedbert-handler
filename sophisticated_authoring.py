@@ -1318,7 +1318,8 @@ class SophisticatedAuthoringEngine:
         
         for pattern, replacement in improvements_map.items():
             if re.search(pattern, current_lower) and replacement in successful_lower:
-                improvements.append(f"Consider '{replacement}' instead of '{pattern.replace('\\b', '')}'")
+                cleaned_pattern = pattern.replace('\\b', '')
+                improvements.append(f"Consider '{replacement}' instead of '{cleaned_pattern}'")
         
         return improvements
 
