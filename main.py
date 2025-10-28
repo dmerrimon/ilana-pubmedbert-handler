@@ -188,6 +188,8 @@ class IntelligentSuggestionsResponse(BaseModel):
 class SophisticatedAuthoringRequest(BaseModel):
     text: str
     context: str = "protocol"
+    therapeutic_area: str = "oncology"
+    phase: str = "Phase II"
 
 class WritingGuidanceResponse(BaseModel):
     suggestion_id: str
@@ -790,7 +792,12 @@ async def get_sophisticated_authoring(request: SophisticatedAuthoringRequest):
         logger.info(f"Getting sophisticated authoring guidance for text length: {len(request.text)}")
         
         if SOPHISTICATED_AUTHORING_AVAILABLE:
-            guidance_items = await get_sophisticated_authoring_guidance(request.text, request.context)
+            guidance_items = await get_sophisticated_authoring_guidance(
+                request.text, 
+                request.context,
+                request.therapeutic_area,
+                request.phase
+            )
             
             response_items = []
             for item in guidance_items:
