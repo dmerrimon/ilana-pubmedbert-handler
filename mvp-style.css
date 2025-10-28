@@ -622,6 +622,24 @@ body {
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
+/* Modal Action Buttons - Smaller Size */
+.modal-actions .btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-width: auto;
+  margin-right: 8px;
+}
+
+.modal-actions .btn:last-child {
+  margin-right: 0;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 /* Responsive */
 @media (max-width: 320px) {
   .score-badges {
