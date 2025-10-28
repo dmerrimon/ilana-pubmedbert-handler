@@ -12,7 +12,8 @@ const CONFIG = {
   AZURE_OPENAI_ENDPOINT: "https://protocol-talk.openai.azure.com/",
   AZURE_OPENAI_DEPLOYMENT: "gpt-4o-deployment",
   PUBMEDBERT_ENDPOINT_URL: "https://usz78oxlybv4xfh2.eastus.azure.endpoints.huggingface.cloud",
-  API_BACKEND_URL: "https://ilanalabs-add-in.onrender.com", // Your Render backend API
+  API_BACKEND_URL: "https://ilanalabs-add-in.onrender.com", // Backend API
+  CORS_ENABLED: true, // Backend has CORS enabled for Azure Static Apps
   REAL_TIME_DELAY: 2000, // 2 seconds after typing stops
   MAX_HIGHLIGHTS: 50 // Prevent performance issues
 };
@@ -797,6 +798,9 @@ function showDetailedIssueInfo(issue) {
             <button class="btn tertiary" onclick="navigateToIssue('${issue.id}');">
               Show in Document
             </button>
+            <button class="btn secondary rewrite-btn" onclick="rewriteWithAI('${issue.id}');">
+              Rewrite
+            </button>
           </div>
         </div>
       </div>
@@ -944,6 +948,167 @@ function updateIntelligenceStatus(statusResult) {
 
 // Phase I: Reviewer comment analysis removed (moved to Phase II)
 
+async function rewriteWithAI(issueId) {
+  try {
+    console.log("🤖 Starting AI rewrite for issue:", issueId);
+    
+    const issue = currentIssues.find(i => i.id === issueId);
+    if (!issue) {
+      alert("Could not find issue to rewrite");
+      return;
+    }
+    
+    // Get the problematic text
+    const textToRewrite = issue.original || issue.phrase || "No text available";
+    
+    // Show loading state
+    const rewriteBtn = document.querySelector('.rewrite-btn');
+    if (rewriteBtn) {
+      rewriteBtn.innerHTML = '⏳ Rewriting...';
+      rewriteBtn.disabled = true;
+    }
+    
+    // Call the Rewrite Intelligence API
+    const response = await fetch(`${CONFIG.API_BACKEND_URL}/api/recommend-language`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: textToRewrite,
+        context: issue.category || "general",
+        therapeutic_area: "general",
+        phase: "general"
+      })
+    });
+    
+    if (response.ok) {
+      const rewriteResult = await response.json();
+      
+      // Show rewrite results in a modal
+      showRewriteResults(rewriteResult, issue);
+      
+      console.log("✅ AI Rewrite completed:", rewriteResult);
+    } else {
+      console.error("Rewrite failed:", response.statusText);
+      alert("AI rewrite failed. Please try again.");
+    }
+    
+  } catch (error) {
+    console.error("AI rewrite error:", error);
+    alert("AI rewrite error. Please try again.");
+  } finally {
+    // Reset button
+    const rewriteBtn = document.querySelector('.rewrite-btn');
+    if (rewriteBtn) {
+      rewriteBtn.innerHTML = 'Rewrite';
+      rewriteBtn.disabled = false;
+    }
+  }
+}
+
+function showRewriteResults(rewriteResult, originalIssue) {
+  // Create rewrite results modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay rewrite-modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🤖 AI Rewrite Results</h3>
+        <button class="close-btn" onclick="closeRewriteResults()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="rewrite-comparison">
+          <div class="original-text">
+            <h4>Original Text:</h4>
+            <p class="text-content">${rewriteResult.original_text}</p>
+          </div>
+          
+          <div class="rewritten-text">
+            <h4>AI Improved Version:</h4>
+            <p class="text-content ai-improved">${rewriteResult.rewritten_text}</p>
+          </div>
+          
+          <div class="improvement-details">
+            <h4>Improvements Made:</h4>
+            <ul>
+              ${rewriteResult.improvements.map(imp => `<li>${imp}</li>`).join('')}
+            </ul>
+            
+            <div class="scores">
+              <div class="score-item">
+                <span class="label">Clinical Score:</span>
+                <span class="score before">${(rewriteResult.clinical_score_before * 100).toFixed(0)}%</span>
+                <span class="arrow">→</span>
+                <span class="score after">${(rewriteResult.clinical_score_after * 100).toFixed(0)}%</span>
+              </div>
+              <div class="score-item">
+                <span class="label">Confidence:</span>
+                <span class="confidence">${(rewriteResult.confidence * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+            
+            <p class="reasoning">${rewriteResult.reasoning}</p>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="btn primary" onclick="acceptRewrite('${originalIssue.id}', '${rewriteResult.rewritten_text.replace(/'/g, "\\'")}')">
+            ✅ Accept AI Rewrite
+          </button>
+          <button class="btn secondary" onclick="closeRewriteResults()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+function closeRewriteResults() {
+  const modal = document.querySelector('.rewrite-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+async function acceptRewrite(issueId, newText) {
+  try {
+    // Find and replace the text in the document
+    await Word.run(async (context) => {
+      const issue = currentIssues.find(i => i.id === issueId);
+      if (!issue) return;
+      
+      const originalText = issue.original || issue.phrase;
+      
+      // Search for the original text and replace with rewritten version
+      const searchResults = context.document.body.search(originalText, {matchCase: false, matchWholeWord: false});
+      searchResults.load('items');
+      await context.sync();
+      
+      if (searchResults.items.length > 0) {
+        // Replace the first occurrence
+        searchResults.items[0].insertText(newText, Word.InsertLocation.replace);
+        await context.sync();
+        
+        console.log("✅ Text replaced in document");
+        
+        // Remove the issue from the list
+        removeIssue(issueId);
+        closeRewriteResults();
+        closeIssueDetail();
+        
+        alert("✅ AI rewrite applied successfully!");
+      } else {
+        alert("Could not find the text in the document to replace.");
+      }
+    });
+  } catch (error) {
+    console.error("Error applying rewrite:", error);
+    alert("Error applying rewrite. Please try manually copying the text.");
+  }
+}
+
 // Phase I: Collaborative Review & Version Intelligence removed (moved to Phase II)
 
 function removeIssue(issueId) {
@@ -1083,4 +1248,7 @@ window.ignoreSuggestion = ignoreSuggestion;
 window.learnMore = learnMore;
 window.closeIssueDetail = closeIssueDetail;
 window.navigateToIssue = navigateToIssue;
+window.rewriteWithAI = rewriteWithAI;
+window.closeRewriteResults = closeRewriteResults;
+window.acceptRewrite = acceptRewrite;
 // Phase I: Collaborative review features removed

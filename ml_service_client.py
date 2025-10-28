@@ -75,9 +75,11 @@ class MLServiceClient:
             return self.embedding_cache[cache_key]
         
         try:
-            # Use your custom clinical handler format
+            # Use correct format for SentenceSimilarityPipeline
             payload = {
-                "inputs": text[:1000],  # Clinical handler can handle more text
+                "inputs": {
+                    "sentences": [text[:1000]]  # Must be a list of sentences
+                },
                 "parameters": {
                     "return_embeddings": True,
                     "analyze_compliance": True,
@@ -98,6 +100,16 @@ class MLServiceClient:
                             # Parse your custom clinical handler response
                             if isinstance(result, dict) and "embeddings" in result:
                                 embeddings = result["embeddings"]
+                                
+                                # Ensure 1024 dimensions for Pinecone compatibility
+                                if len(embeddings) < 1024:
+                                    # Pad with interpolated values to reach 1024 dimensions
+                                    while len(embeddings) < 1024:
+                                        embeddings.extend(embeddings[:min(len(embeddings), 1024 - len(embeddings))])
+                                    embeddings = embeddings[:1024]
+                                elif len(embeddings) > 1024:
+                                    # Truncate to 1024 dimensions
+                                    embeddings = embeddings[:1024]
                                 
                                 # Store clinical analysis data for context
                                 if "clinical_analysis" in result:
@@ -275,7 +287,7 @@ class MLServiceClient:
             return suggestions  # Return original suggestions on failure
     
     def _create_embeddings_from_similarities(self, similarities: List[float], text: str) -> List[float]:
-        """Create 768-dimensional embeddings from similarity scores"""
+        """Create 1024-dimensional embeddings from similarity scores for Pinecone compatibility"""
         import hashlib
         
         # Start with similarity scores
@@ -287,9 +299,9 @@ class MLServiceClient:
         # Convert hash to numbers and combine with similarities
         hash_values = [int(text_hash[i:i+2], 16) / 255.0 for i in range(0, 32, 2)]
         
-        # Repeat and combine to create 768 dimensions
+        # Repeat and combine to create 1024 dimensions (Pinecone index size)
         embeddings = []
-        for i in range(768):
+        for i in range(1024):
             if i < len(base_embedding):
                 embeddings.append(base_embedding[i])
             elif i < len(hash_values) + len(base_embedding):
@@ -300,7 +312,7 @@ class MLServiceClient:
                 variation = (i // len(base_embedding)) * 0.01
                 embeddings.append(base_embedding[idx] + variation)
         
-        return embeddings[:768]
+        return embeddings[:1024]
     
     def _cache_embedding(self, key: str, embedding: List[float]):
         """Cache embedding with size limit"""
@@ -328,7 +340,7 @@ class MLServiceClient:
             logger.warning(f"Could not store clinical context: {e}")
     
     def _fallback_embeddings(self, text: str) -> List[float]:
-        """Fallback embeddings using simple text analysis"""
+        """Fallback embeddings using simple text analysis - 1024 dimensions for Pinecone compatibility"""
         if not self.config.fallback_enabled:
             return []
         
@@ -336,11 +348,11 @@ class MLServiceClient:
         import hashlib
         text_hash = hashlib.md5(text.encode()).hexdigest()
         
-        # Convert hash to exactly 768-dimensional vector (PubMedBERT size)
+        # Convert hash to exactly 1024-dimensional vector (Pinecone index size)
         embeddings = []
         
-        # Repeat hash pattern to get 768 dimensions
-        for i in range(768):
+        # Repeat hash pattern to get 1024 dimensions
+        for i in range(1024):
             # Use modulo to cycle through hash characters
             char_idx = (i * 2) % len(text_hash)
             hex_pair = text_hash[char_idx:char_idx + 2]
@@ -351,13 +363,13 @@ class MLServiceClient:
             value = int(hex_pair, 16) / 255.0
             embeddings.append(value)
         
-        # Ensure exactly 768 dimensions
-        embeddings = embeddings[:768]
-        while len(embeddings) < 768:
-            embeddings.extend(embeddings[:768 - len(embeddings)])
+        # Ensure exactly 1024 dimensions
+        embeddings = embeddings[:1024]
+        while len(embeddings) < 1024:
+            embeddings.extend(embeddings[:1024 - len(embeddings)])
         
         logger.info(f"Using fallback embeddings: {len(embeddings)} dimensions")
-        return embeddings[:768]
+        return embeddings[:1024]
     
     def _fallback_similarity(self, text1: str, text2: str) -> float:
         """Fallback similarity using word overlap"""
