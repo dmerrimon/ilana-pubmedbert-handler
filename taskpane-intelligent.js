@@ -69,9 +69,15 @@ async function generateIntelligentSuggestions() {
       context.load(selection, "text");
       await context.sync();
       
-      if (selection.text && selection.text.length > 10) {
+      if (selection.text && selection.text.length > 50) {  // Increased minimum from 10 to 50 characters
         const therapeuticArea = document.getElementById("therapeutic-area").value || 'oncology';
         const phase = document.getElementById("study-phase").value || 'Phase II';
+        
+        // Skip if text appears to be administrative (title page, TOC, etc.)
+        if (isAdministrativeText(selection.text)) {
+          console.log("Skipping administrative text analysis");
+          return;
+        }
         
         const suggestions = await getIntelligentSuggestions(selection.text, "protocol", therapeuticArea, phase);
         
@@ -136,6 +142,41 @@ async function getIntelligentSuggestions(text, context, therapeuticArea = 'oncol
     
     return { phrase_suggestions: [], feasibility_concerns: [], regulatory_flags: [] };
   }
+}
+
+function isAdministrativeText(text) {
+  const textLower = text.toLowerCase();
+  
+  // Administrative content indicators
+  const adminIndicators = [
+    'protocol number', 'dmid protocol', 'funding mechanism', 'principal investigator',
+    'clinical protocol manager', 'medical officer', 'table of contents', 'list of tables',
+    'list of figures', 'signature page', 'statement of compliance', 'good clinical practice',
+    'signed:', 'date:', 'associate professor', 'version number'
+  ];
+  
+  // Count how many administrative indicators are present
+  const indicatorCount = adminIndicators.filter(indicator => 
+    textLower.includes(indicator)
+  ).length;
+  
+  // If 2 or more indicators present, likely administrative
+  if (indicatorCount >= 2) {
+    return true;
+  }
+  
+  // Check if text is mostly page numbers or references
+  const words = text.split(/\s+/);
+  const numericWords = words.filter(word => 
+    /^\d+$/.test(word) || word.length <= 2
+  );
+  
+  // If more than 30% numeric/short words, likely TOC or references
+  if (words.length > 5 && (numericWords.length / words.length) > 0.3) {
+    return true;
+  }
+  
+  return false;
 }
 
 function convertSuggestionsFormat(sophisticatedSuggestions) {
@@ -511,8 +552,23 @@ async function runIntelligenceCheck() {
       context.load(selection, "text");
       await context.sync();
       
-      if (!selection.text || selection.text.length < 10) {
-        showError("Please select some text (at least 10 characters) to analyze.");
+      if (!selection.text || selection.text.length < 50) {
+        showError("Please select some text (at least 50 characters) to analyze.");
+        return;
+      }
+      
+      // Check if selected text is administrative
+      if (isAdministrativeText(selection.text)) {
+        const suggestionsContainer = document.getElementById("intelligent-suggestions");
+        suggestionsContainer.innerHTML = `
+          <div class="protocol-insights">
+            <h5>⏭️ Skipped Administrative Content</h5>
+            <div class="insight-item">This appears to be administrative content (title page, table of contents, etc.)</div>
+            <div class="insight-item">Please select actual protocol content for analysis</div>
+            <div class="insight-item">Try selecting: objectives, methods, inclusion criteria, safety sections</div>
+          </div>
+        `;
+        suggestionsContainer.style.display = "block";
         return;
       }
       

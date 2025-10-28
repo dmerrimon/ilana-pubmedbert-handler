@@ -139,6 +139,53 @@ class SophisticatedAuthoringEngine:
             logger.error(f"Error getting real protocol insights: {e}")
             return {}
     
+    def _should_analyze_text(self, text: str) -> bool:
+        """Determine if text is relevant protocol content that should be analyzed"""
+        if not text or len(text.strip()) < 50:  # Too short to be meaningful
+            return False
+            
+        text_lower = text.lower()
+        
+        # Skip administrative/boilerplate sections
+        skip_indicators = [
+            # Title page elements
+            "protocol number", "dmid protocol", "funding mechanism", "principal investigator",
+            "clinical protocol manager", "medical officer", "medical monitor", "draft or version number",
+            
+            # Table of contents and navigation
+            "table of contents", "list of tables", "list of figures", "list of abbreviations",
+            "page", "section", "chapter",
+            
+            # Administrative compliance
+            "statement of compliance", "signature page", "good clinical practice", "code of federal regulations",
+            "ich e6", "federal register", "human subjects protection training",
+            
+            # Document metadata
+            "signed:", "date:", "associate professor", "mbchb", "msc", "mmed", "phd", "md", "mph",
+            
+            # Excessive punctuation or formatting
+            "........", "-------", "_______"
+        ]
+        
+        # Check if text contains primarily administrative content
+        skip_count = sum(1 for indicator in skip_indicators if indicator in text_lower)
+        
+        # If more than 2 skip indicators, likely administrative
+        if skip_count >= 2:
+            return False
+            
+        # Skip if text is mostly numbers/references (like TOC page numbers)
+        words = text.split()
+        if len(words) < 10:  # Very short text
+            return False
+            
+        # Skip if more than 30% of words are numbers or single characters
+        numeric_ratio = sum(1 for word in words if word.isdigit() or len(word) <= 2) / len(words)
+        if numeric_ratio > 0.3:
+            return False
+            
+        return True
+
     def _detect_protocol_section(self, text: str) -> str:
         """Detect which section of the protocol this text represents"""
         text_lower = text.lower()
@@ -1328,6 +1375,11 @@ async def get_sophisticated_authoring_guidance(text: str, context: str = "protoc
     """Get sophisticated authoring guidance with protocol database learning (API integration function)"""
     
     engine = SophisticatedAuthoringEngine()
+    
+    # Check if text should be analyzed (filter out administrative content)
+    if not engine._should_analyze_text(text):
+        logger.info(f"⏭️ Skipping analysis of administrative/non-relevant text (length: {len(text)})")
+        return []
     
     # CRITICAL: Initialize real protocol data before using it
     await engine._initialize_with_real_data()
