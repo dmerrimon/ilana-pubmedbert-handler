@@ -23,8 +23,65 @@ let realTimeEnabled = true;
 let currentIssues = [];
 let typingTimer = null;
 let highlightedRanges = [];
+let detectedTherapeuticArea = "oncology";
+let detectedPhase = "Phase II";
 let isInitialized = false;
 
+
+// Therapeutic area and phase detection
+function detectTherapeuticAreaAndPhase(text) {
+  const textLower = text.toLowerCase();
+  
+  // Detect therapeutic area
+  const therapeuticPatterns = {
+    "oncology": ["cancer", "tumor", "oncology", "chemotherapy", "radiation", "malignant", "metastatic", "carcinoma", "lymphoma", "melanoma"],
+    "cardiology": ["cardiac", "heart", "cardiovascular", "myocardial", "coronary", "arrhythmia", "hypertension"],
+    "neurology": ["neurological", "brain", "alzheimer", "parkinson", "stroke", "epilepsy", "multiple sclerosis"],
+    "diabetes": ["diabetes", "diabetic", "glucose", "insulin", "glycemic", "hba1c"],
+    "immunology": ["autoimmune", "immune", "rheumatoid", "lupus", "inflammatory", "immunosuppressive"],
+    "infectious_disease": ["infection", "infectious", "antibiotic", "antimicrobial", "viral", "bacterial"],
+    "respiratory": ["asthma", "copd", "pulmonary", "respiratory", "lung", "bronchial"]
+  };
+  
+  let bestMatch = "oncology";
+  let highestScore = 0;
+  
+  for (const [area, keywords] of Object.entries(therapeuticPatterns)) {
+    const score = keywords.reduce((count, keyword) => {
+      return count + (textLower.split(keyword).length - 1);
+    }, 0);
+    
+    if (score > highestScore) {
+      highestScore = score;
+      bestMatch = area;
+    }
+  }
+  
+  // Detect phase
+  const phasePatterns = [
+    { phase: "Phase I", patterns: ["phase 1", "phase i", "first in human", "dose escalation", "maximum tolerated dose", "mtd"] },
+    { phase: "Phase II", patterns: ["phase 2", "phase ii", "efficacy", "response rate", "preliminary efficacy"] },
+    { phase: "Phase III", patterns: ["phase 3", "phase iii", "pivotal", "registration", "confirmatory", "superiority", "non-inferiority"] },
+    { phase: "Phase IV", patterns: ["phase 4", "phase iv", "post-marketing", "real world", "observational"] }
+  ];
+  
+  let detectedPhase = "Phase II"; // Default
+  for (const { phase, patterns } of phasePatterns) {
+    for (const pattern of patterns) {
+      if (textLower.includes(pattern)) {
+        detectedPhase = phase;
+        break;
+      }
+    }
+    if (detectedPhase !== "Phase II") break;
+  }
+  
+  detectedTherapeuticArea = bestMatch;
+  detectedPhase = detectedPhase;
+  
+  console.log(`🔍 Detected: ${detectedTherapeuticArea} ${detectedPhase}`);
+  return { therapeutic_area: bestMatch, phase: detectedPhase };
+}
 
 // Feedback system for AI improvement
 async function submitFeedback(findingId, action, userFeedback) {
@@ -200,6 +257,9 @@ async function getDocumentContent() {
 async function analyzeProtocol(text) {
   console.log("Analyzing protocol text with ALL sophisticated AI features:", text.substring(0, 100) + "...");
   
+  // Detect therapeutic area and phase from document
+  detectTherapeuticAreaAndPhase(text);
+  
   try {
     console.log("🚀 Using ALL sophisticated analysis endpoints...");
     
@@ -218,7 +278,9 @@ async function analyzeProtocol(text) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: text.substring(0, 3000),
-          context: "protocol" 
+          context: "protocol",
+          therapeutic_area: detectedTherapeuticArea,
+          phase: detectedPhase
         })
       }),
       
@@ -405,9 +467,6 @@ function createIssueElement(issue) {
     <div class="issue-description">${issue.description}</div>
     ${quotedTextHtml}
     ${evidenceHtml}
-    <div class="issue-citation">
-      <strong>Source:</strong> ${issue.citation}
-    </div>
     <div class="issue-actions">
       <button class="issue-action-btn accept" onclick="acceptSuggestion('${issue.id}')">
         Accept
@@ -879,15 +938,17 @@ function showDetailedIssueInfo(issue) {
       .issue-severity-badge.low { background: #4caf50; color: white; }
       .modal-actions {
         display: flex;
-        gap: 10px;
-        margin-top: 20px;
+        gap: 6px;
+        margin-top: 15px;
+        flex-wrap: wrap;
       }
       .btn {
-        padding: 8px 16px;
+        padding: 4px 8px;
         border: none;
-        border-radius: 4px;
+        border-radius: 3px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 12px;
+        min-width: auto;
       }
       .btn.primary { background: #2196f3; color: white; }
       .btn.secondary { background: #757575; color: white; }
@@ -975,8 +1036,8 @@ async function rewriteWithAI(issueId) {
       body: JSON.stringify({
         text: textToRewrite,
         context: issue.category || "general",
-        therapeutic_area: "general",
-        phase: "general"
+        therapeutic_area: detectedTherapeuticArea,
+        phase: detectedPhase
       })
     });
     
@@ -1192,7 +1253,9 @@ async function getRealtimeGuidance() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         text: currentText.substring(0, 1000), // Smaller chunk for real-time
-        context: "protocol" 
+        context: "protocol",
+        therapeutic_area: detectedTherapeuticArea,
+        phase: detectedPhase
       })
     });
     

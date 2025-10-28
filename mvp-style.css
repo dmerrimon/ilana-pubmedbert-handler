@@ -624,10 +624,10 @@ body {
 
 /* Modal Action Buttons - Smaller Size */
 .modal-actions .btn {
-  padding: 6px 12px;
-  font-size: 13px;
+  padding: 4px 8px;
+  font-size: 12px;
   min-width: auto;
-  margin-right: 8px;
+  margin-right: 6px;
 }
 
 .modal-actions .btn:last-child {
@@ -637,7 +637,8 @@ body {
 .modal-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
+  margin-top: 12px;
 }
 
 /* Responsive */
