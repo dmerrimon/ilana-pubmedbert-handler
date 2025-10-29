@@ -12,13 +12,13 @@
   <DisplayName DefaultValue="Ilana" />
   <Description DefaultValue="AI-powered clinical protocol compliance analysis - your Grammarly for clinical protocols." />
 
-  <IconUrl DefaultValue="https://zealous-dune-00e524d0f.3.azurestaticapps.net/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://zealous-dune-00e524d0f.3.azurestaticapps.net/assets/icon-64.png" />
+  <IconUrl DefaultValue="https://gentle-mushroom-061918f0f.3.azurestaticapps.net/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://gentle-mushroom-061918f0f.3.azurestaticapps.net/assets/icon-64.png" />
 
   <SupportUrl DefaultValue="https://github.com/dmerrimon/ilana-pubmedbert-handler" />
   
   <AppDomains>
-    <AppDomain>https://zealous-dune-00e524d0f.3.azurestaticapps.net</AppDomain>
+    <AppDomain>https://gentle-mushroom-061918f0f.3.azurestaticapps.net</AppDomain>
     <AppDomain>https://ilanalabs-add-in.onrender.com</AppDomain>
   </AppDomains>
   
@@ -34,7 +34,7 @@
   </Requirements>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://zealous-dune-00e524d0f.3.azurestaticapps.net/taskpane.html" />
+    <SourceLocation DefaultValue="https://gentle-mushroom-061918f0f.3.azurestaticapps.net/taskpane.html" />
   </DefaultSettings>
 
   <!-- Permissions -->
