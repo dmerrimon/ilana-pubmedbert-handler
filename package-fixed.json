@@ -1,0 +1,22 @@
+{
+  "name": "protocol-intelligence-addin",
+  "version": "1.0.0",
+  "description": "AI-powered clinical protocol analysis for Microsoft Word",
+  "main": "taskpane.html",
+  "scripts": {
+    "start": "node server-fix.js",
+    "test-server": "node server-fix.js",
+    "serve": "npx http-server . -p 3000 -c-1 --cors"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": [
+    "office-addin",
+    "word",
+    "clinical-trials",
+    "protocol",
+    "ai"
+  ],
+  "author": "Ilana Labs",
+  "license": "MIT"
+}

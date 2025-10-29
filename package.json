@@ -1,0 +1,28 @@
+{
+  "name": "protocol-intelligence-addin",
+  "version": "1.0.0",
+  "description": "AI-powered clinical protocol analysis for Microsoft Word",
+  "main": "taskpane.html",
+  "scripts": {
+    "build": "echo 'Static files ready for Azure deployment' && exit 0",
+    "start": "npx http-server . -p 3000 -c-1 --cors -S -C cert.pem -K key.pem",
+    "start-simple": "npx http-server . -p 3000 -c-1 --cors",
+    "install-cert": "npx office-addin-dev-certs install",
+    "dev": "npx office-addin-debugging start manifest.xml"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "office-addin-dev-certs": "^1.11.3",
+    "office-addin-debugging": "^5.0.0"
+  },
+  "keywords": [
+    "office-addin",
+    "word",
+    "clinical-trials",
+    "protocol",
+    "ai"
+  ],
+  "author": "Ilana Labs",
+  "license": "MIT"
+}

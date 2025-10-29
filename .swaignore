@@ -1,0 +1,40 @@
+# Azure Static Web Apps ignore file
+# Exclude large files and folders to reduce deployment size
+
+# Python cache and environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+pinecone_env/
+venv/
+env/
+
+# Node modules (if any)
+node_modules/
+
+# Data files and logs
+*.json
+*.log
+*.txt
+*.md
+
+# Deployment files
+*.zip
+Procfile
+render.yaml
+requirements.txt
+gunicorn.conf.py
+start.sh
+
+# Python source files (backend only)
+*.py
+
+# Keep only frontend files
+!index.html
+!taskpane*.html
+!taskpane*.js
+!*.css
+!package.json
+!manifest*.xml
+!staticwebapp.config.json

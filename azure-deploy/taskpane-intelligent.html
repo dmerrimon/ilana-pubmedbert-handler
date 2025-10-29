@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ilana - Intelligent Authoring</title>
+    
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .button.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .button.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .button.success {
+            background: #28a745;
+            color: white;
+        }
+
+        .button.success:hover {
+            background: #218838;
+        }
+
+        .button.active {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .toggle-button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #e9ecef;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-button.active {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        /* Intelligent Suggestions Panel */
+        .suggestion-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .suggestion-category {
+            margin-bottom: 15px;
+        }
+
+        .suggestion-category h4 {
+            margin: 0 0 10px 0;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .suggestion-item {
+            padding: 15px;
+            border-left: 4px solid #6c757d;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .suggestion-item.high-priority {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .suggestion-item.medium-priority {
+            border-left-color: #ffc107;
+            background: #fffdf5;
+        }
+
+        .suggestion-item.low-priority {
+            border-left-color: #28a745;
+            background: #f5fff5;
+        }
+
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .original-phrase {
+            font-weight: 600;
+            color: #495057;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .category-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .category-badge.clarity {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .category-badge.regulatory {
+            background: #ffe6e6;
+            color: #721c24;
+        }
+
+        .category-badge.feasibility {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .category-badge.real_data_intelligence {
+            background: #e7f3ff;
+            color: #0056b3;
+        }
+
+        .category-badge.protocol_pattern {
+            background: #f0f9ff;
+            color: #075985;
+        }
+
+        .category-badge.therapeutic_specific {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .category-badge.section_specific {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .suggestion-rationale {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .suggestion-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .suggestion-option {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-option:hover {
+            background: #e3f2fd;
+            border-color: #90caf9;
+        }
+
+        /* Feasibility Concerns */
+        .feasibility-concern {
+            padding: 15px;
+            background: #fff8e1;
+            border: 1px solid #ffcc02;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .concern-title {
+            font-weight: 600;
+            color: #f57f17;
+            margin-bottom: 8px;
+        }
+
+        .concern-suggestions {
+            font-size: 13px;
+            color: #5d4037;
+        }
+
+        .concern-suggestions li {
+            margin-bottom: 4px;
+        }
+
+        /* Regulatory Flags */
+        .regulatory-flag {
+            padding: 10px 15px;
+            background: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #c62828;
+        }
+
+        /* Results Containers */
+        .results-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+            display: none;
+        }
+
+        .results-container.visible {
+            display: block;
+        }
+
+        /* Loading and Error States */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        /* Comment Analysis */
+        .comment-category {
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+        }
+
+        .comment-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .comment-content {
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .confidence-badge.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-badge.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-badge.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .suggested-actions {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .suggested-actions ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .suggested-actions li {
+            margin-bottom: 3px;
+        }
+
+        /* Intelligence Level Indicators */
+        .intelligence-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .intelligence-badge.sophisticated_9_5 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Evidence Display */
+        .evidence-section {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+            font-size: 12px;
+            color: #495057;
+        }
+
+        .evidence-section strong {
+            color: #007bff;
+        }
+
+        /* Clinical Score Display */
+        .clinical-score {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #1976d2;
+            margin-left: 8px;
+        }
+
+        /* Real Protocol Insights */
+        .protocol-insights {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .protocol-insights h5 {
+            margin: 0 0 8px 0;
+            color: #1565c0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .protocol-insights .insight-item {
+            font-size: 12px;
+            color: #424242;
+            margin-bottom: 4px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 400px) {
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .suggestion-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🧠 Intelligent Protocol Assistant</h1>
+        <p>Real-time writing guidance • Feasibility analysis • Smart review</p>
+    </div>
+
+    <div class="error-message" id="error-message"></div>
+    <div class="loading" id="loading">Processing...</div>
+
+    <div class="controls">
+        <div class="toggle-button" id="enable-intelligent-suggestions">
+            <span>🧠 Enable Sophisticated Authoring (9.5/10)</span>
+            <span>Real protocol intelligence • PubMedBERT guidance</span>
+        </div>
+
+        <!-- Therapeutic Area Selection -->
+        <div style="margin: 10px 0;">
+            <label for="therapeutic-area" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">🎯 Therapeutic Area:</label>
+            <select id="therapeutic-area" class="button" style="width: 100%; text-align: left; padding: 8px 12px;">
+                <option value="oncology">🔬 Oncology</option>
+                <option value="cardiology">❤️ Cardiology</option>
+                <option value="neurology">🧠 Neurology</option>
+                <option value="infectious_disease">🦠 Infectious Disease</option>
+                <option value="diabetes">🩺 Diabetes</option>
+                <option value="immunology">🛡️ Immunology</option>
+                <option value="respiratory">🫁 Respiratory</option>
+                <option value="general">⚕️ General</option>
+            </select>
+        </div>
+
+        <!-- Phase Selection -->
+        <div style="margin: 10px 0;">
+            <label for="study-phase" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">🧪 Study Phase:</label>
+            <select id="study-phase" class="button" style="width: 100%; text-align: left; padding: 8px 12px;">
+                <option value="Phase I">Phase I - First-in-Human</option>
+                <option value="Phase II" selected>Phase II - Proof of Concept</option>
+                <option value="Phase III">Phase III - Confirmatory</option>
+                <option value="Phase IV">Phase IV - Post-Marketing</option>
+            </select>
+        </div>
+
+        <button class="button secondary" id="check-feasibility">
+            ⚡ Run Feasibility Check
+        </button>
+
+        <button class="button secondary" id="categorize-comments">
+            📝 Analyze Reviewer Comments
+        </button>
+
+        <button class="button primary" id="run-intelligence-check" style="margin-top: 10px;">
+            🔍 Analyze Current Selection
+        </button>
+    </div>
+
+    <!-- Real-time Intelligent Suggestions -->
+    <div id="intelligent-suggestions" class="results-container">
+        <!-- Suggestions will be populated here by JavaScript -->
+    </div>
+
+    <!-- Feasibility Analysis Results -->
+    <div id="feasibility-results" class="results-container">
+        <!-- Feasibility results will be populated here -->
+    </div>
+
+    <!-- Comment Analysis Results -->
+    <div id="comment-analysis-results" class="results-container">
+        <!-- Comment categorization results will be populated here -->
+    </div>
+
+    <!-- Help Section -->
+    <div class="results-container" style="display: block;">
+        <h3>🧠 Sophisticated Protocol Intelligence (9.5/10)</h3>
+        <div style="font-size: 13px; color: #6c757d; line-height: 1.6;">
+            <div class="protocol-insights">
+                <h5>🎯 Real Protocol Intelligence</h5>
+                <div class="insight-item"><strong>16,730 protocols analyzed</strong> from real anonymized clinical trials</div>
+                <div class="insight-item"><strong>PubMedBERT embeddings</strong> for medical language understanding</div>
+                <div class="insight-item"><strong>Success prediction</strong> based on amendment patterns</div>
+            </div>
+            
+            <p><strong>🔬 Therapeutic-Specific Guidance:</strong> Intelligence tailored to your therapeutic area</p>
+            <p><strong>📊 Evidence-Based Suggestions:</strong> Recommendations backed by real protocol data</p>
+            <p><strong>⚡ Feasibility Analysis:</strong> Operational risk assessment using ML insights</p>
+            <p><strong>🚩 Regulatory Intelligence:</strong> Compliance guidance from successful protocols</p>
+            <p><strong>💡 Real-Time Analysis:</strong> Sophisticated guidance as you type</p>
+            
+            <div style="margin-top: 15px; padding: 8px; background: #e7f3ff; border-radius: 6px; border-left: 3px solid #0056b3;">
+                <strong>💡 Pro Tip:</strong> Select "Neurology" for highest success rate insights (94% average success, 0 amendments)
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="taskpane-intelligent.js"></script>
+</body>
+</html>

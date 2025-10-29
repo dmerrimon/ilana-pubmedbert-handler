@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ilana</title>
+    
+    <!-- Office.js -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    
+    <!-- MVP CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="container" class="grammarly-container">
+        <!-- Header with Protocol Quality Scores -->
+        <div class="quality-header">
+            <div class="score-badges">
+                <div class="score-badge clarity" id="clarity-badge">
+                    <span class="score-label">Clarity</span>
+                    <span class="score-grade" id="clarity-grade">-</span>
+                </div>
+                <div class="score-badge regulatory" id="regulatory-badge">
+                    <span class="score-label">Regulatory</span>
+                    <span class="score-grade" id="regulatory-grade">-</span>
+                </div>
+                <div class="score-badge feasibility" id="feasibility-badge">
+                    <span class="score-label">Feasibility</span>
+                    <span class="score-grade" id="feasibility-grade">-</span>
+                </div>
+            </div>
+            <div class="amendment-risk" id="amendment-risk">
+                <span class="risk-label">Amendment Risk</span>
+                <span class="risk-score" id="risk-score">Low</span>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Real-time Status -->
+            <div class="status-bar">
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot active"></span>
+                    <span class="status-text">Real-time checking active</span>
+                </div>
+                <button class="scan-button" id="scan-button">
+                    <span class="scan-icon">🔍</span>
+                    Scan Document
+                </button>
+            </div>
+
+            <!-- Issues Found -->
+            <div class="issues-section" id="issues-section">
+                <div class="section-header">
+                    <h3>Issues Found</h3>
+                    <span class="issue-count" id="issue-count">0</span>
+                </div>
+                
+                <div class="issue-filters">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="compliance">Compliance</button>
+                    <button class="filter-btn" data-filter="feasibility">Feasibility</button>
+                    <button class="filter-btn" data-filter="clarity">Clarity</button>
+                </div>
+
+                <div class="issues-list" id="issues-list">
+                    <!-- Issues will be populated here -->
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-btn primary" id="accept-all-btn">
+                    <span class="btn-icon">✓</span>
+                    Accept All
+                </button>
+                <button class="action-btn secondary" id="ignore-all-btn">
+                    <span class="btn-icon">✕</span>
+                    Ignore All
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Analyzing protocol compliance...</p>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="taskpane-mvp.js"></script>
+</body>
+</html>
