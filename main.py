@@ -83,7 +83,11 @@ app = FastAPI(title="Ilana Protocol Intelligence API", version="1.0.0")
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://zealous-dune-00e524d0f.3.azurestaticapps.net", "https://localhost:3000"],
+    allow_origins=[
+        "https://zealous-dune-00e524d0f.3.azurestaticapps.net", 
+        "https://gentle-mushroom-061918f0f.3.azurestaticapps.net",
+        "https://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
